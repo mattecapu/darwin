@@ -1,27 +1,37 @@
-import rnn
+from individual import individual
 import numpy as np
 
 # parameters
 TERRAIN_SIDE = 1000
-POPULATION_SIZE = 100
-FOOD_LOCATIONS = 20
-INPUTS = 5
-HIDDENS = 20
-OUTPUTS = 2
+POPULATION_SIZE = 50
+# fitness accuracy
+FOOD_LOCATIONS = 10
+TRAINING_ITERATIONS = 500
 
 # constants
 FOOD = -1
 
-# a 1000x1000 grid containing informations about
-# food and individuals locations
-terrain = [[0] * TERRAIN_SIDE] * TERRAIN_SIDE
-
 # place food sources in random points on the terrain
-food_locations = [np.floor(np.random.rand(2) * TERRAIN_SIDE) for x in range(0, FOOD_LOCATIONS)]
-for x in food_locations:
-	terrain[x[0]][x[1]] = FOOD
+food_locations = [tuple(np.int32(np.floor(np.random.rand(2) * TERRAIN_SIDE))) for x in range(0, FOOD_LOCATIONS)]
+food_distances = map(lambda x: np.linalg.norm(x), food_locations)
+food_max_distance = np.amax(food_distances)
 
-# populate our world!
-population = [rnn.RNN() for x in range(0, POPULATION_SIZE)]
-# initialize the individuals
-population = map(lambda x: x.init(INPUTS, HIDDENS, OUTPUTS), population)
+for x in food_locations:
+	print x, np.linalg.norm(x)
+
+# let's populate our world!
+population = [individual() for x in range(0, POPULATION_SIZE)]
+
+for nn in population:
+	nn.fitness = 0
+	for food_i in xrange(0, FOOD_LOCATIONS):
+		food = food_locations[food_i]
+		for i in xrange(0, TRAINING_ITERATIONS): nn.tick(nn.visibility(food))
+		final_food_distance = np.linalg.norm((nn.position[0] - food[0], nn.position[1] - food[1]))
+		nn.fitness += (final_food_distance * food_max_distance) / (food_distances[food_i] ** 2)
+		nn.reset()
+	nn.fitness /= FOOD_LOCATIONS
+	print nn.fitness
+
+population.sort(key = lambda x: x.fitness)
+print map(lambda x: x.fitness, population)
