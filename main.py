@@ -3,11 +3,11 @@ import numpy as np
 
 # parameters
 ALG_ITERATIONS = 1024
-POPULATION_SIZE = 64
+POPULATION_SIZE = 32
 FOOD_SPREADING = 512
 # fitness accuracy
 FOOD_LOCATIONS = 16
-TRAINING_ITERATIONS = 512
+TRAINING_ITERATIONS = 16
 
 # constants
 FOOD = -1
@@ -23,7 +23,7 @@ for x in food_locations:
 # let's populate our world!
 population = [individual.create() for x in range(0, POPULATION_SIZE)]
 
-for i in xrange(0, ALG_ITERATIONS):
+for epoch in xrange(0, ALG_ITERATIONS):
 	for nn in population:
 		nn.fitness = 0
 		for food_i in xrange(0, FOOD_LOCATIONS):
@@ -35,7 +35,7 @@ for i in xrange(0, ALG_ITERATIONS):
 		nn.fitness /= FOOD_LOCATIONS
 
 	population.sort(key = lambda x: x.fitness)
-	print "top fitness", population[0].fitness
+	print epoch, "top fitness", population[0].fitness
 
 	children = []
 	for nn in population:
@@ -45,8 +45,8 @@ for i in xrange(0, ALG_ITERATIONS):
 			cupid = np.int32(np.random.rand() * POPULATION_SIZE / 10)
 		else:
 			# mate with one of the bottom 90% of the population
-			cupid = np.int32(POPULATION_SIZE / 10 * (1 + 9 * np.random.rand()))
-		children += nn.mate(population[cupid])
+			cupid = np.int32(POPULATION_SIZE / 10 * (1 + 7 * np.random.rand()))
+		children += [nn.mate(population[cupid])]
 
 	# move on!
 	population = children

@@ -23,8 +23,8 @@ class individual:
 	def create():
 		# generates random chromosomes
 		return individual(
-			[np.random.randn(1, HIDDENS)[0] for i in range(0, N)],
-			[np.random.randn(1, HIDDENS)[0] for i in range(0, N)]
+			[list(np.random.randn(1, HIDDENS)[0]) for i in range(0, N)],
+			[list(np.random.randn(1, HIDDENS)[0]) for i in range(0, N)]
 		)
 
 	def __init__(self, f_chrom, m_chrom):
@@ -37,9 +37,9 @@ class individual:
 		weights = reduce(
 			lambda res, x: map(x, res),
 			[itertools.chain, list, np.array],
-			[fusion[0:HIDDENS], fusion[HIDDENS:(HIDDENS + OUTPUTS)],  fusion[(HIDDENS + OUTPUTS):]]
+			[fusion[0:HIDDENS], fusion[HIDDENS:(HIDDENS + INPUTS)],  fusion[(HIDDENS + INPUTS):]]
 		)
-		weights[2] = weights[2].T
+		weights[1] = weights[1].T
 		self.nn = rnn.RNN(tuple(weights))
 		self.reset()
 
@@ -93,8 +93,7 @@ class individual:
 			if r < 0.6:
 				# draw the locus where to split
 				r = np.int32(np.random.rand() * HIDDENS)
-				chr = (self.f_chrom[i] if m_or_f else self.m_chrom[i])[0:r] +\
-					  (self.m_chrom[i] if not m_or_f else self.m_chrom[i])[r:]
+				chr = (self.f_chrom[i] if m_or_f else self.m_chrom[i])[0:r] + (self.m_chrom[i] if not m_or_f else self.f_chrom[i])[r:]
 			else:
 				r = np.random.rand()
 				chr = self.f_chrom[i] if m_or_f else self.m_chrom[i]
@@ -107,7 +106,7 @@ class individual:
 				chr[r] = np.random.randn() * chr[r]
 
 			# add the new chromosome to the gamete
-			gamete += chr
+			gamete += [chr]
 
 		return gamete
 	
