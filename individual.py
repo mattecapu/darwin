@@ -1,5 +1,6 @@
 import numpy as np
 import rnn
+import itertools
 from util import rotate, pos_or_zero
 
 # morphology
@@ -9,6 +10,8 @@ EYES = 5
 INPUTS = EYES
 HIDDENS = 20
 OUTPUTS = 3
+# number of chromosome pairs
+N = INPUTS + HIDDENS + OUTPUTS
 
 # costants
 MOTION_MULTIPLIER = 3
@@ -16,9 +19,28 @@ TURN = 2 * np.pi
 FIELD_OF_VIEW = (TURN / 2) / EYES
 
 class individual:
-	def __init__(self):
+	@staticmethod
+	def create():
+		# generates random chromosomes
+		return individual(
+			[np.random.randn(1, HIDDENS)[0] for i in range(0, N)],
+			[np.random.randn(1, HIDDENS)[0] for i in range(0, N)]
+		)
+
+	def __init__(self, f_chrom, m_chrom):
 		self.fitness = 0
-		self.nn = rnn.RNN(INPUTS, HIDDENS, OUTPUTS)
+		# stores the chromosomes
+		self.f_chrom = f_chrom
+		self.m_chrom = m_chrom
+		# rebuild the weights from genes
+		fusion = [[np.mean([f_chrom[i][j], m_chrom[i][j]]) for j in range(0, HIDDENS)] for i in range(0, N)]
+		weights = reduce(
+			lambda res, x: map(x, res),
+			[itertools.chain, list, np.array],
+			[fusion[0:HIDDENS], fusion[HIDDENS:(HIDDENS + OUTPUTS)],  fusion[(HIDDENS + OUTPUTS):]]
+		)
+		weights[2] = weights[2].T
+		self.nn = rnn.RNN(tuple(weights))
 		self.reset()
 
 	def reset(self):
@@ -58,4 +80,36 @@ class individual:
 
 		# convert to a column vector
 		return np.array([visibility]).T
-		
+
+	def gamete(self):
+		gamete = []
+		for i in xrange(0, N):
+			# toss a coin to choose wheter use a chromosome
+			# from the father genes or the mother's as the main one
+			m_or_f = np.random.rand() < 0.5
+
+			# 1 in 6 times crossing over happens
+			r = np.random.rand()
+			if r < 0.6:
+				# draw the locus where to split
+				r = np.int32(np.random.rand() * HIDDENS)
+				chr = (self.f_chrom[i] if m_or_f else self.m_chrom[i])[0:r] +\
+					  (self.m_chrom[i] if not m_or_f else self.m_chrom[i])[r:]
+			else:
+				r = np.random.rand()
+				chr = self.f_chrom[i] if m_or_f else self.m_chrom[i]
+
+			# 1 on 10 times, mutate a gene
+			r = np.random.rand()
+			if r < 0.1:
+				# draw the gene to mutate
+				r = np.int32(np.random.rand() * HIDDENS)
+				chr[r] = np.random.randn() * chr[r]
+
+			# add the new chromosome to the gamete
+			gamete += chr
+
+		return gamete
+	
+	def mate(self, partner):
+		return individual(self.gamete(), partner.gamete())

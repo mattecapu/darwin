@@ -1,12 +1,14 @@
 import numpy as np
 
 class RNN:
-	def init(self, input_size, hidden_size, output_size):
-		self.W_hh = np.random.randn(hidden_size, hidden_size)
-		self.W_xh = np.random.randn(hidden_size, input_size)
-		self.W_hy = np.random.randn(output_size, hidden_size)
-		self.h = np.zeros((hidden_size, 1))
-		return
+	def __init__(self, (hh, xh, hy)):
+		self.W_hh = hh
+		self.W_xh = xh
+		self.W_hy = hy
+		self.reset()
+
+	def reset(self):
+		self.h = np.zeros((self.W_hh.shape[0], 1))
 
 	def step(self, x):
 		# update the hidden state
