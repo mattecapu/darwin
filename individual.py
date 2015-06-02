@@ -33,7 +33,7 @@ class individual:
 		self.f_chrom = f_chrom
 		self.m_chrom = m_chrom
 		# rebuild the weights from genes
-		fusion = [[np.mean([f_chrom[i][j], m_chrom[i][j]]) for j in range(0, HIDDENS)] for i in range(0, N)]
+		fusion = [[(f_chrom[i][j] + m_chrom[i][j]) / 2 for j in range(0, HIDDENS)] for i in range(0, N)]
 		weights = reduce(
 			lambda res, x: map(x, res),
 			[itertools.chain, list, np.array],
