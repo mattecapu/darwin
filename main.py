@@ -2,12 +2,14 @@ from individual import individual
 import numpy as np
 
 # parameters
-ALG_ITERATIONS = 1024
-POPULATION_SIZE = 32
-FOOD_SPREADING = 512
+ALG_ITERATIONS = 100 #1024
+POPULATION_SIZE = 32 # 64
+# a lower value should improve the
+# signal-to-noise ratio in the vision system
+FOOD_SPREADING = 32
 # fitness accuracy
 FOOD_LOCATIONS = 16
-TRAINING_ITERATIONS = 16
+TRAINING_ITERATIONS = 32
 
 # constants
 FOOD = -1
@@ -44,8 +46,8 @@ for epoch in xrange(0, ALG_ITERATIONS):
 			# mate with one of the top 10% of the population
 			cupid = np.int32(np.random.rand() * POPULATION_SIZE / 10)
 		else:
-			# mate with one of the bottom 90% of the population
-			cupid = np.int32(POPULATION_SIZE / 10 * (1 + 7 * np.random.rand()))
+			# mate with one of the bottom 50% of the population
+			cupid = np.int32(POPULATION_SIZE / 10 * (1 + 5 * np.random.rand()))
 		children += [nn.mate(population[cupid])]
 
 	# move on!
