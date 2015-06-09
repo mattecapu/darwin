@@ -12,7 +12,7 @@ OUTPUTS = 3
 # number of chromosome pairs
 N = INPUTS + HIDDENS + OUTPUTS
 
-# costants
+# constants
 MOTION_MULTIPLIER = 3
 TURN = 2 * np.pi
 FIELD_OF_VIEW = (TURN / 2) / EYES
