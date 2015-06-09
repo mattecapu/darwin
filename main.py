@@ -2,42 +2,39 @@ from individual import individual
 import numpy as np
 
 # parameters
-ALG_ITERATIONS = 100 #1024
+ALG_ITERATIONS = 10000
 POPULATION_SIZE = 32 # 64
 # a lower value should improve the
 # signal-to-noise ratio in the vision system
 FOOD_SPREADING = 32
 # fitness accuracy
-FOOD_LOCATIONS = 16
-TRAINING_ITERATIONS = 16
+FOOD_LOCATIONS = 8
+FITNESS_COMPUTING_ITERATIONS = 16
 
-# constants
-FOOD = -1
 
 # place food sources in random points on the terrain
-food_locations = [tuple(np.int32(np.floor(np.random.rand(2) * FOOD_SPREADING))) for x in xrange(FOOD_LOCATIONS)]
-food_distances = map(lambda x: x[0] ** 2 + x[1] ** 2, food_locations)
-food_max_distance = np.sqrt(np.amax(food_distances))
-
-for x in food_locations:
-	print x, np.linalg.norm(x)
+food_locations = [tuple(np.random.rand(2) * FOOD_SPREADING) for x in xrange(FOOD_LOCATIONS)]
+food_distances_sq = map(lambda x: x[0] ** 2 + x[1] ** 2, food_locations)
+food_max_distance = np.sqrt(np.amax(food_distances_sq))
 
 # let's populate our world!
 population = [individual.create() for x in xrange(POPULATION_SIZE)]
+
+history = open("fitness.m", "a")
 
 for epoch in xrange(ALG_ITERATIONS):
 	for nn in population:
 		nn.fitness = 0
 		for food_i in xrange(FOOD_LOCATIONS):
 			food = food_locations[food_i]
-			for i in xrange(TRAINING_ITERATIONS): nn.tick(nn.visibility(food))
+			for i in xrange(FITNESS_COMPUTING_ITERATIONS): nn.tick(nn.visibility(food))
 			final_food_distance = np.linalg.norm((nn.position[0] - food[0], nn.position[1] - food[1]))
-			nn.fitness += (final_food_distance * food_max_distance) / food_distances[food_i]
+			nn.fitness += (final_food_distance * food_max_distance) / food_distances_sq[food_i]
 			nn.reset()
 		nn.fitness /= FOOD_LOCATIONS
 
 	population.sort(key = lambda x: x.fitness)
-	print epoch, "top fitness", population[0].fitness
+	history.write(str(epoch) + ' ' + str(population[0].fitness) + '\n')
 
 	children = []
 	for nn in population:
@@ -52,3 +49,6 @@ for epoch in xrange(ALG_ITERATIONS):
 
 	# move on!
 	population = children
+
+# don't leave a dangling file pointer!
+history.close()
