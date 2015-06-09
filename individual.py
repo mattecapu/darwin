@@ -1,7 +1,6 @@
 import numpy as np
 import rnn
-import itertools
-from util import rotate, pos_or_zero
+from util import rotate
 
 # morphology
 EYES = 5
@@ -17,7 +16,7 @@ N = INPUTS + HIDDENS + OUTPUTS
 MOTION_MULTIPLIER = 3
 TURN = 2 * np.pi
 FIELD_OF_VIEW = (TURN / 2) / EYES
-EYE_ANGLES = [(2 * eye + 1) * FIELD_OF_VIEW / 2 for eye in range(EYES)]
+EYE_ANGLES = (2 * np.arange(EYES).reshape((EYES, 1)) + 1) * FIELD_OF_VIEW / 2
 LIGHT_INTENSITY = 1024
 
 DEG = 180 / np.pi
@@ -25,11 +24,8 @@ DEG = 180 / np.pi
 class individual:
 	@staticmethod
 	def create():
-		# generates random chromosomes
-		return individual(
-			[list(np.random.randn(1, HIDDENS)[0]) for i in range(N)],
-			[list(np.random.randn(1, HIDDENS)[0]) for i in range(N)]
-		)
+		# generates N random chromosomes
+		return individual(np.random.randn(N, 1, HIDDENS), np.random.randn(N, 1, HIDDENS))
 
 	def __init__(self, f_chrom, m_chrom):
 		self.fitness = 0
@@ -37,14 +33,12 @@ class individual:
 		self.f_chrom = f_chrom
 		self.m_chrom = m_chrom
 		# rebuild the weights from genes
-		fusion = [[(f_chrom[i][j] + m_chrom[i][j]) / 2 for j in range(HIDDENS)] for i in range(N)]
-		weights = reduce(
-			lambda res, x: map(x, res),
-			[itertools.chain, list, np.array],
-			[fusion[0:HIDDENS], fusion[HIDDENS:(HIDDENS + INPUTS)],  fusion[(HIDDENS + INPUTS):]]
-		)
-		weights[1] = weights[1].T
-		self.nn = rnn.RNN(tuple(weights))
+		fusion = (self.f_chrom + self.m_chrom) / 2
+		self.nn = rnn.RNN((
+			fusion[0:HIDDENS, 0, :],
+			fusion[HIDDENS:(HIDDENS + INPUTS), 0, :].T,
+			fusion[(HIDDENS + INPUTS):, 0, :]
+		))
 		self.reset()
 
 	def reset(self):
@@ -69,19 +63,20 @@ class individual:
 		intensity = LIGHT_INTENSITY / (d_squared / 2)
 		# max and min angle from which you can see 'point'
 		theta_min = np.arcsin(1 / np.sqrt(d_squared))
-		theta_max = TURN / 2 - 2 * theta_min
+		theta_max = TURN / 4 - 2 * theta_min
 		# rotate wrt the point inclination
-		[theta_min, theta_max] = [th + angle - TURN / 4 for th in [theta_min, theta_max]]
+		theta_min += angle - TURN / 4
+		theta_max += angle
 		# get the angle of incidence of light at angle phi
-		get_theta = lambda phi: np.abs(np.arctan2(x - np.sin(phi), y - np.sin(phi)) + phi)
+		get_theta = lambda phi: np.abs(np.arctan2(x - np.sin(phi), y - np.cos(phi)) + phi)
 		# rotate the eyes wrt animal orientation
-		phis = [phi - self.rotation for phi in EYE_ANGLES]
+		phis = EYE_ANGLES - self.rotation
 		# compute incidence on the eyes
-		return [[0 if not theta_min < phi < theta_max else intensity * np.sin(get_theta(phi))] for phi in PHIS]
+		return (intensity * np.sin(get_theta(phis))) * (phis > theta_min) * (phis < theta_max)
 
 	def gamete(self):
-		gamete = []
-		for i in xrange(0, N):
+		gamete = np.empty((N, 1, HIDDENS))
+		for i in xrange(N):
 			# toss a coin to choose wheter use a chromosome
 			# from the father genes or the mother's as the main one
 			m_or_f = np.random.rand() < 0.5
@@ -91,22 +86,20 @@ class individual:
 			if r < 0.6:
 				# draw the locus where to split
 				r = np.int32(np.random.rand() * HIDDENS)
-				chr = (self.f_chrom[i] if m_or_f else self.m_chrom[i])[0:r] + (self.m_chrom[i] if not m_or_f else self.f_chrom[i])[r:]
+				gamete[i, 0, 0:r] = (self.f_chrom if m_or_f else self.m_chrom)[i, 0, 0:r]
+				gamete[i, 0, r:] = (self.m_chrom if not m_or_f else self.f_chrom)[i, 0, r:]
 			else:
 				r = np.random.rand()
-				chr = self.f_chrom[i] if m_or_f else self.m_chrom[i]
+				gamete[i] = (self.f_chrom if m_or_f else self.m_chrom)[i, 0]
 
 			# 1 on 10 times, mutate a gene
 			r = np.random.rand()
 			if r < 0.1:
 				# draw the gene to mutate
 				r = np.int32(np.random.rand() * HIDDENS)
-				chr[r] = np.random.randn() * chr[r]
-
-			# add the new chromosome to the gamete
-			gamete += [chr]
+				gamete[i, 0, r] = np.random.randn() * gamete[i, 0, r]
 
 		return gamete
-	
+
 	def mate(self, partner):
 		return individual(self.gamete(), partner.gamete())
