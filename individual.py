@@ -85,7 +85,7 @@ class individual:
 			r = np.random.rand()
 			if r < 0.6:
 				# draw the locus where to split
-				r = np.int32(np.random.rand() * HIDDENS)
+				r = np.random.randint(HIDDENS)
 				gamete[i, 0, 0:r] = (self.f_chrom if m_or_f else self.m_chrom)[i, 0, 0:r]
 				gamete[i, 0, r:] = (self.m_chrom if not m_or_f else self.f_chrom)[i, 0, r:]
 			else:
@@ -96,7 +96,7 @@ class individual:
 			r = np.random.rand()
 			if r < 0.1:
 				# draw the gene to mutate
-				r = np.int32(np.random.rand() * HIDDENS)
+				r = np.random.randint(HIDDENS)
 				gamete[i, 0, r] = np.random.randn() * gamete[i, 0, r]
 
 		return gamete
