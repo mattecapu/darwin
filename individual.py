@@ -1,6 +1,5 @@
 import numpy as np
 import rnn
-from util import rotate
 
 # morphology
 EYES = 5
@@ -35,7 +34,7 @@ class individual:
 		# rebuild the weights from genes
 		fusion = (self.f_chrom + self.m_chrom) / 2
 		self.nn = rnn.RNN((
-			fusion[0:HIDDENS, 0, :],
+			fusion[:HIDDENS, 0, :],
 			fusion[HIDDENS:(HIDDENS + INPUTS), 0, :].T,
 			fusion[(HIDDENS + INPUTS):, 0, :]
 		))
@@ -87,7 +86,7 @@ class individual:
 			if r < 0.6:
 				# draw the locus where to split
 				r = np.random.randint(HIDDENS)
-				gamete[i, 0, 0:r] = (self.f_chrom if m_or_f else self.m_chrom)[i, 0, 0:r]
+				gamete[i, 0, 0:r] = (self.f_chrom if m_or_f else self.m_chrom)[i, 0, :r]
 				gamete[i, 0, r:] = (self.m_chrom if not m_or_f else self.f_chrom)[i, 0, r:]
 			else:
 				r = np.random.rand()
