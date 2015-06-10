@@ -1,8 +1,9 @@
 from individual import individual
 import numpy as np
+from serialize import dump
 
 # parameters
-ALG_ITERATIONS = 10000
+ALG_ITERATIONS = 4096
 POPULATION_SIZE = 32 # 64
 # a lower value should improve the
 # signal-to-noise ratio in the vision system
@@ -10,6 +11,11 @@ FOOD_SPREADING = 16
 # fitness accuracy
 FOOD_LOCATIONS = 8
 FITNESS_COMPUTING_ITERATIONS = 32
+
+# number of weights dumps to take
+DUMPS = 10
+# id of this simulation
+RUN_PREFIX = repr(np.random.randint(2 ** 12))
 
 def further(p):
 	if abs(p[0]) < 0.5: p[0] += 0.5
@@ -25,7 +31,7 @@ food_max_distance = np.sqrt(np.amax(food_distances_sq))
 # let's populate our world!
 population = [individual.create() for x in xrange(POPULATION_SIZE)]
 
-history = open("fitness.m", "a")
+history = open("data/fitness_run" + repr(RUN_PREFIX) + ".m", "a")
 
 for epoch in xrange(ALG_ITERATIONS):
 	for nn in population:
@@ -38,8 +44,15 @@ for epoch in xrange(ALG_ITERATIONS):
 			nn.reset()
 		nn.fitness /= FOOD_LOCATIONS
 
+	# sort by best fitness
 	population.sort(key = lambda x: x.fitness)
+	
 	history.write(str(epoch) + ' ' + str(population[0].fitness) + '\n')
+	# dump weights of the best
+	if (epoch % ALG_ITERATIONS / DUMPS) == 0 or epoch == 0:
+		dump(RUN_PREFIX, epoch, population[0])
+		# log to console
+		print epoch, population[0].fitness
 
 	children = []
 	for nn in population:
