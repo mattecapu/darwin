@@ -49,7 +49,7 @@ class individual:
 		# outputs are changes to position and orientation
 		[[delta_x], [delta_y], [delta_theta]] = self.nn.step(input)
 		# rotates displacement
-		displ = np.dot([[np.cos(self,rotation), np.sin(self,rotation)], [-np.sin(self.rotation), np.cos(self.rotation)]], [[delta_x, delta_y]])
+		displ = np.dot([[np.cos(self.rotation), np.sin(self.rotation)], [-np.sin(self.rotation), np.cos(self.rotation)]], [delta_x, delta_y])
 		self.position = (self.position[0] + displ[0], self.position[1] + displ[1])
 		self.rotation = self.rotation + delta_y * TURN
 
