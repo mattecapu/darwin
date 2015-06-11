@@ -6,7 +6,7 @@ from serialize import dedump
 # get parameters of the simulation
 RUN_PREFIX = sys.argv[1]
 EPOCH = sys.argv[2]
-ITERATIONS = 1000 if len(sys.argv) < 4 else sys.argv[3]
+ITERATIONS = 256 if len(sys.argv) < 4 else sys.argv[3]
 
 food = [50, 50]
 # load genes
