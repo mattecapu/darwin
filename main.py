@@ -24,14 +24,14 @@ def further(p):
 
 # place food sources in random points on the terrain
 food_locations = np.random.rand(FOOD_LOCATIONS, 2) * 2 - 1
-food_locations = [further(x)  * FOOD_SPREADING for x in food_locations]
+food_locations = [further(x) * FOOD_SPREADING for x in food_locations]
 food_distances_sq = [x[0] ** 2 + x[1] ** 2 for x in food_locations]
 food_max_distance = np.sqrt(np.amax(food_distances_sq))
 
 # let's populate our world!
 population = [individual.create() for x in xrange(POPULATION_SIZE)]
 
-history = open("data/fitness_run" + repr(RUN_PREFIX) + ".m", "a")
+history = open("data/fitness/run" + repr(RUN_PREFIX) + ".m", "w")
 
 for epoch in xrange(ALG_ITERATIONS):
 	for nn in population:
