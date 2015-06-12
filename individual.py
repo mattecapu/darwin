@@ -1,22 +1,25 @@
 import numpy as np
 import rnn
+from load_config import load_config
+
+config = load_config()
 
 # morphology
-EYES = 5
+EYES = config["eyes"]
 
 # layers size
 INPUTS = EYES
-HIDDENS = 20
-OUTPUTS = 3
+HIDDENS = config["hidden_layer_size"]
+OUTPUTS = config["output_layer_size"]
 # number of chromosome pairs
 N = INPUTS + HIDDENS + OUTPUTS
 
 # constants
-MOTION_MULTIPLIER = 3
+MOTION_MULTIPLIER = 2
 TURN = 2 * np.pi
-FIELD_OF_VIEW = (TURN / 2) / EYES
+FIELD_OF_VIEW = TURN / (2 * EYES)
 EYE_ANGLES = (2 * np.arange(EYES).reshape((EYES, 1)) + 1) * FIELD_OF_VIEW / 2
-LIGHT_INTENSITY = 1024
+LIGHT_INTENSITY = config["light_intensity"]
 
 DEG = 180 / np.pi
 
@@ -81,9 +84,9 @@ class individual:
 			# from the father genes or the mother's as the main one
 			m_or_f = np.random.rand() < 0.5
 
-			# 1 in 6 times crossing over happens
+			# sometimes crossing over happens
 			r = np.random.rand()
-			if r < 0.6:
+			if r < config["crossing_over_rate"]:
 				# draw the locus where to split
 				r = np.random.randint(HIDDENS)
 				gamete[i, 0, 0:r] = (self.f_chrom if m_or_f else self.m_chrom)[i, 0, :r]
@@ -92,9 +95,9 @@ class individual:
 				r = np.random.rand()
 				gamete[i] = (self.f_chrom if m_or_f else self.m_chrom)[i, 0]
 
-			# 1 on 10 times, mutate a gene
+			# sometimes, mutate a gene
 			r = np.random.rand()
-			if r < 0.1:
+			if r < config["mutation_rate"]:
 				# draw the gene to mutate
 				r = np.random.randint(HIDDENS)
 				gamete[i, 0, r] = np.random.randn() * gamete[i, 0, r]

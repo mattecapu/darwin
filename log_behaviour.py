@@ -2,13 +2,16 @@ import sys
 import numpy as np
 from individual import individual
 from serialize import dedump
+from load_config import load_config
+
+config = load_config()
 
 # get parameters of the simulation
 RUN_PREFIX = sys.argv[1]
 EPOCH = sys.argv[2]
-ITERATIONS = 256 if len(sys.argv) < 4 else sys.argv[3]
+ITERATIONS = config["behaviour_logging_iterations"] if len(sys.argv) < 4 else sys.argv[3]
 
-food = [24, 24]
+food = [np.sqrt(2) * config["food_distance"]] * 2
 # load genes
 subject = dedump(RUN_PREFIX, EPOCH)
 log = open("data/behaviours/run" + str(RUN_PREFIX) + "_iter" + str(EPOCH) + ".dat", "w")

@@ -2,12 +2,13 @@ function display_behaviour(run, epoch)
 	% needed for drawing arrows
 	pkg load geometry
 	data = load(["data/behaviours/run" int2str(run) "_iter" int2str(epoch) ".dat"]);
+	config = load("config.m");
 	dir_name = [int2str(run) "_" int2str(epoch)];
 	mkdir("data/plots", dir_name);
 	mkdir(["data/plots/" dir_name], "frames");
 
 	padding = 10;
-	food = [24, 24];
+	food = [config(3) config(3)] * sqrt(2);
 	bounds = [
 		min([data(:, 2); food(1)]) - padding
 		max([data(:, 2); food(1)]) + padding
