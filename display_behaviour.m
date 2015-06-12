@@ -3,8 +3,9 @@ function display_behaviour(run, epoch)
 	pkg load geometry
 	data = load(["data/behaviours/run" int2str(run) "_iter" int2str(epoch) ".dat"]);
 	config = load("config.m");
-	dir_name = [int2str(run) "_" int2str(epoch)];
-	mkdir("data/plots", dir_name);
+	dir_name = [int2str(run) "/" int2str(epoch)];
+	mkdir("data/plots", int2str(run));
+	mkdir(["data/plots/" int2str(run)], int2str(epoch));
 	mkdir(["data/plots/" dir_name], "frames");
 
 	padding = 10;
@@ -37,8 +38,7 @@ function display_behaviour(run, epoch)
 		set(p, "markerfacecolor", "b")
 		% draw orientation marker
 		drawArrow(data(i, 2), data(i, 3), data(i, 2) + 2.5 * cos(data(i, 4)), data(i, 3) + 2.5 * sin(data(i, 4)), 0.6, 0.5)
-		filename = ["data/plots/" dir_name "/frames/" int2str(i) ".png"];
-		print(filename, "-Ggs.cmd")
+		print(["data/plots/" dir_name "/frames/" int2str(i) ".png"], "-Ggs.cmd")
 		disp(i)
 	end
 	% creates the movie

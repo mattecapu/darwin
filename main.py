@@ -31,7 +31,7 @@ food_locations = np.vstack([
 # let's populate our world!
 population = [individual.create() for x in xrange(POPULATION_SIZE)]
 
-history = open("data/fitness/run" + str(RUN_PREFIX) + "_" + str(ITERATIONS) + ".m", "w")
+history = open("data/fitness/run" + str(RUN_PREFIX) + ".m", "w")
 
 print "simulation", RUN_PREFIX
 print ITERATIONS, " iterations (" + str(ITERATIONS * POPULATION_SIZE * FOOD_LOCATIONS * FITNESS_COMPUTING_ITERATIONS), "cycles)"
