@@ -47,19 +47,21 @@ for epoch in xrange(ITERATIONS):
 			# but because fitness should be maximized and not minimized, we use the shifted reciprocal
 			# (1 / (1 + x)) of this quantity, where the shift avoid a vertical asymptote at 0,
 			# and the reciprocal invert the trend from descending to ascending
-			nn.fitness += FOOD_DISTANCE / (1 + np.linalg.norm((nn.position[0] - food[0], nn.position[1] - food[1])))
+			nn.fitness += 1 / (1 + np.linalg.norm(nn.position - food))
 			nn.reset()
 		nn.fitness /= FOOD_LOCATIONS
 
-	# sort by best fitness
-	population.sort(key = lambda x: x.fitness)
+	# sort by best fitness (descendent order)
+	population.sort(key = lambda x: -x.fitness)
 	
 	history.write(str(epoch) + ' ' + str(population[0].fitness) + '\n')
 	# dump weights of the best
 	if (epoch % (ITERATIONS / DUMPS)) == 0 or epoch == 0:
 		dump(RUN_PREFIX, epoch, population[0])
 		# log to console
-		print "iteration ", epoch, "-> dump at fitness", population[0].fitness
+		print "iteration", epoch, "-> dump at fitness", population[0].fitness
+	elif epoch % (ITERATIONS / (DUMPS * 10)) == 0:
+		print "iteration", epoch, "fitness near", population[0].fitness
 
 	children = []
 	for nn in population:

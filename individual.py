@@ -44,7 +44,7 @@ class individual:
 		self.reset()
 
 	def reset(self):
-		self.position = (0, 0)
+		self.position = np.zeros((1, 2))
 		self.rotation = TURN / 8
 		self.nn.reset()
 
@@ -52,14 +52,15 @@ class individual:
 		# outputs are changes to position and orientation
 		[[delta_x], [delta_y], [delta_theta]] = self.nn.step(input)
 		# rotates displacement
-		displ = np.dot([[np.cos(self.rotation), np.sin(self.rotation)], [-np.sin(self.rotation), np.cos(self.rotation)]], [delta_x, delta_y])
-		self.position = (self.position[0] + displ[0], self.position[1] + displ[1])
-		self.rotation = self.rotation + delta_y * TURN
+		sin_rot = np.sin(self.rotation)
+		cos_rot = np.cos(self.rotation)
+		self.position += np.dot([[delta_x, delta_y]], [[cos_rot, sin_rot], [-sin_rot, cos_rot]])
+		self.rotation = (self.rotation + delta_y * TURN) % TURN
 
 	def visibility(self, (x, y)):
 		# find inclination of the point (angle of the line between origin and point)
-		y_dist = y - self.position[1]
-		x_dist = x - self.position[0]
+		y_dist = y - self.position[0, 1]
+		x_dist = x - self.position[0, 0]
 		angle = np.arctan2(y_dist, x_dist)
 		# intensity dimishes with the square of the distance... or so
 		d_squared = y_dist ** 2 + x_dist ** 2
