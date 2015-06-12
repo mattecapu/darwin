@@ -1,6 +1,5 @@
 function display_behaviour(run, epoch)
 	% needed for drawing arrows
-	pkg load geometry
 	data = load(["data/behaviours/run" int2str(run) "_iter" int2str(epoch) ".dat"]);
 	config = load("config.m");
 	dir_name = [int2str(run) "/" int2str(epoch)];
@@ -19,28 +18,39 @@ function display_behaviour(run, epoch)
 
 	% multiply by 2pi to get angles
 	data(:, 4) *= 2 * pi;
+	arrow_point = 3.5 * [cos(data(:, 4)) sin(data(:, 4))];
 
 	% disable plotting on screen
 	figure("visible", "off")
 
 	disp(["will plot " int2str(length(data)) " frames"])
 
+	% generate plot template
+	clf()
+	newplot()
+	axis(bounds, "image", "manual")
+	hold on
+	title_plot = title("iteration 0");
+	xlabel("x")
+	ylabel("y")
+	food_plot = plot(food(1), food(2), "dg");
+	set(food_plot, "markerfacecolor", "g")
+	creature_plot = stem(data(1, 2), data(1, 3), "filled");
+	set(creature_plot, "linestyle", "none")
+	set(creature_plot, "showbaseline", "off")
+	arrow_plot = quiver(data(1, 2), data(1, 3), arrow_point(1, 1), arrow_point(1, 2), 0);
+
 	% print each frame... sloooowly!
 	for i = 1:length(data)
-		clf()
-		newplot()
-		axis(bounds, "image", "manual")
-		hold on
-		title(["iteration " int2str(i)])
-		p = plot(food(1), food(2), "dg");
-		set(p, "markerfacecolor", "g")
-		p = scatter(data(i, 2), data(i, 3), 15);
-		set(p, "markerfacecolor", "b")
-		% draw orientation marker
-		drawArrow(data(i, 2), data(i, 3), data(i, 2) + 2.5 * cos(data(i, 4)), data(i, 3) + 2.5 * sin(data(i, 4)), 0.6, 0.5)
+		set(title_plot, "string", ["iteration " int2str(i)])
+		set(creature_plot, "xdata", data(i, 2))
+		set(creature_plot, "ydata", data(i, 3))
+		set(arrow_plot, "xdata", data(i, 2))
+		set(arrow_plot, "ydata", data(i, 3))
+		set(arrow_plot, "udata", arrow_point(i, 1))
+		set(arrow_plot, "vdata", arrow_point(i, 2))
 		print(["data/plots/" dir_name "/frames/" int2str(i) ".png"], "-Ggs.cmd")
-		disp(i)
 	end
 	% creates the movie
-	system(["ffmpeg -f image2 -framerate 25 -start_number 1 -framerate 8 -i \"data/plots/" dir_name "/frames/%d.png\" -c:v libx264 data/plots/" dir_name "/" dir_name ".mp4"])
+	system(["ffmpeg -f image2 -framerate 25 -start_number 1 -framerate 8 -i \"data/plots/" dir_name "/frames/%d.png\" -c:v libx264 -y data/plots/" dir_name "/movie.mp4"]);
 end
