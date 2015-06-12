@@ -1,17 +1,17 @@
 % iterations
 10000
 % population size
-32
+64
 % food distance
 24
 % number of food locations
-16
+8
 % iterations for computing fitness
 32
 % dumps
 10
 % behaviour logging iterations
-256
+128
 % eyes
 5
 % hidden layer size
@@ -23,6 +23,6 @@
 % motion multiplier
 2
 % mutation rate
-0.1
+0.11
 % crossing over rate
 0.6
