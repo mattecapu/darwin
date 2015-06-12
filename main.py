@@ -43,7 +43,11 @@ for epoch in xrange(ITERATIONS):
 		for f in xrange(FOOD_LOCATIONS):
 			food = food_locations[epoch * FOOD_LOCATIONS + f]
 			for i in xrange(FITNESS_COMPUTING_ITERATIONS): nn.tick(nn.visibility(food))
-			nn.fitness += np.linalg.norm((nn.position[0] - food[0], nn.position[1] - food[1])) / FOOD_DISTANCE
+			# the fitness is computed as the fraction of the distance traveled towards the food
+			# but because fitness should be maximized and not minimized, we use the shifted reciprocal
+			# (1 / (1 + x)) of this quantity, where the shift avoid a vertical asymptote at 0,
+			# and the reciprocal invert the trend from descending to ascending
+			nn.fitness += FOOD_DISTANCE / (1 + np.linalg.norm((nn.position[0] - food[0], nn.position[1] - food[1])))
 			nn.reset()
 		nn.fitness /= FOOD_LOCATIONS
 
