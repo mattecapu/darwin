@@ -8,10 +8,10 @@ RUN_PREFIX = sys.argv[1]
 EPOCH = sys.argv[2]
 ITERATIONS = 256 if len(sys.argv) < 4 else sys.argv[3]
 
-food = [32, 32]
+food = [24, 24]
 # load genes
 subject = dedump(RUN_PREFIX, EPOCH)
-log = open("data/rnns/behaviours/run" + str(RUN_PREFIX) + "_iter" + str(EPOCH) + ".dat", "w")
+log = open("data/behaviours/run" + str(RUN_PREFIX) + "_iter" + str(EPOCH) + ".dat", "w")
 
 for epoch in xrange(ITERATIONS):
 	# data about the subject
