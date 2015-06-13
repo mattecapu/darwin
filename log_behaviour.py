@@ -20,8 +20,8 @@ for epoch in xrange(ITERATIONS):
 	# data about the subject
 	data = [
 		epoch,
-		subject.position[0],
-		subject.position[1],
+		subject.position[0, 0],
+		subject.position[0, 1],
 		subject.rotation
 	]
 	log.write(" ".join(map(str, data)) + "\n")
