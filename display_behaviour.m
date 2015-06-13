@@ -1,6 +1,11 @@
 function display_behaviour(run, epoch)
 	% needed for drawing arrows
 	data = load(["data/behaviours/run" int2str(run) "_iter" int2str(epoch) ".dat"]);
+	try
+		fitness = load(["data/fitness/run" int2str(run) ".m"])(epoch + 1, 2);
+	catch
+		fitness = NaN;
+	end
 	config = load("config.m");
 	dir_name = [int2str(run) "/" int2str(epoch)];
 	mkdir("data/plots", int2str(run));
@@ -30,7 +35,7 @@ function display_behaviour(run, epoch)
 	newplot()
 	axis(bounds, "image", "manual")
 	hold on
-	title_plot = title("iteration 0");
+	title(["fitness " num2str(fitness)]);
 	xlabel("x")
 	ylabel("y")
 	food_plot = plot(food(1), food(2), "dg");
@@ -42,7 +47,6 @@ function display_behaviour(run, epoch)
 
 	% print each frame... sloooowly!
 	for i = 1:length(data)
-		set(title_plot, "string", ["iteration " int2str(i)])
 		set(creature_plot, "xdata", data(i, 2))
 		set(creature_plot, "ydata", data(i, 3))
 		set(arrow_plot, "xdata", data(i, 2))
