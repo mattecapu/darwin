@@ -6,7 +6,7 @@ from load_config import load_config
 config = load_config()
 
 # parameters
-ITERATIONS = config["iterations"]
+ITERATIONS = config["iterations"] + 1
 POPULATION_SIZE = config["population_size"]
 # a lower value should improve the
 # signal-to-noise ratio in the vision system
