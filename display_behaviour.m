@@ -1,6 +1,10 @@
 function display_behaviour(run, epoch)
-	% needed for drawing arrows
-	data = load(["data/behaviours/run" int2str(run) "_iter" int2str(epoch) ".dat"]);
+	try
+		data = load(["data/behaviours/run" int2str(run) "_iter" int2str(epoch) ".dat"]);
+	catch
+		system(["python log_behaviour.py " int2str(run) " " int2str(epoch)]);
+		data = load(["data/behaviours/run" int2str(run) "_iter" int2str(epoch) ".dat"]);
+	end
 	try
 		fitness = load(["data/fitness/run" int2str(run) ".m"])(epoch + 1, 2);
 	catch
