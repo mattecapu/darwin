@@ -15,7 +15,6 @@ def load_config():
 		"hidden_layer_size": int(config[8]),
 		"output_layer_size": int(config[9]),
 		"light_intensity": config[10],
-		"motion_multiplier": config[11],
-		"mutation_rate": config[12],
-		"crossing_over_rate": config[13]
+		"mutation_rate": config[11],
+		"crossing_over_rate": config[12]
 	}

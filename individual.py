@@ -15,7 +15,6 @@ OUTPUTS = config["output_layer_size"]
 N = INPUTS + HIDDENS + OUTPUTS
 
 # constants
-MOTION_MULTIPLIER = 2
 TURN = 2 * np.pi
 FIELD_OF_VIEW = TURN / (2 * EYES)
 EYE_ANGLES = (2 * np.arange(EYES).reshape((EYES, 1)) + 1) * FIELD_OF_VIEW / 2

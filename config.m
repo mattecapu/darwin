@@ -1,7 +1,7 @@
 % iterations
 10000
 % population size
-64
+32
 % food distance
 24
 % number of food locations
@@ -20,8 +20,6 @@
 3
 % light intensity
 1024
-% motion multiplier
-2
 % mutation rate
 0.11
 % crossing over rate
