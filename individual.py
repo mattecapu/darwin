@@ -55,7 +55,7 @@ class individual:
 		sin_rot = np.sin(self.rotation)
 		cos_rot = np.cos(self.rotation)
 		self.position += np.dot([[delta_x, delta_y]], [[cos_rot, sin_rot], [-sin_rot, cos_rot]])
-		self.rotation = (self.rotation + delta_y * TURN) % TURN
+		self.rotation = (self.rotation + delta_theta * TURN) % TURN
 
 	def visibility(self, (x, y)):
 		# find inclination of the point (angle of the line between origin and point)
