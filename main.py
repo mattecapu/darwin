@@ -39,7 +39,7 @@ def sex((partner_1, partner_2)):
 if __name__ == "__main__":
 	# flag to disable logging for quick test runs
 	DRY_RUN = len(sys.argv) > 2 and sys.argv[2] == "dry"
-	
+
 	if not DRY_RUN:
 		# id of this simulation
 		RUN_PREFIX = str(np.random.randint(2 ** 12))
@@ -61,18 +61,13 @@ if __name__ == "__main__":
 		print ITERATIONS, " iterations (" + str(ITERATIONS * POPULATION_SIZE * FOOD_LOCATIONS * FITNESS_COMPUTING_ITERATIONS), "cycles)"
 		print "\n"
 
-	# generate in advance the matings (e.g. pairs of index biased with fitness)
-	best_bias = np.random.choice(2, ITERATIONS * POPULATION_SIZE, p = [0.9, 0.1])
-	top10 = np.random.randint(-POPULATION_SIZE / 2, 0, size = ITERATIONS * POPULATION_SIZE)
-	top50 = np.random.randint(POPULATION_SIZE / 10, size = ITERATIONS * POPULATION_SIZE)
-	matings = (top10 * (best_bias - 1)) + (top50 * best_bias)
-
 	# parallel processes pool
 	pool = Pool(processes = 4)
 
 	for epoch in xrange(ITERATIONS):
 		# compute fitness of every individual
-		fitnesses = pool.map(calc_fitness, [(population[i], food_locations[(epoch * FOOD_LOCATIONS):((epoch + 1)* FOOD_LOCATIONS)]) for i in xrange(POPULATION_SIZE)])
+		food_locs = food_locations[(epoch * FOOD_LOCATIONS):((epoch + 1)* FOOD_LOCATIONS)]
+		fitnesses = pool.map(calc_fitness, [(population[i], food_locs) for i in xrange(POPULATION_SIZE)])
 		for i in xrange(POPULATION_SIZE):
 			population[i].fitness = fitnesses[i]
 
@@ -90,15 +85,19 @@ if __name__ == "__main__":
 			elif epoch % (ITERATIONS / (DUMPS * 10)) == 0:
 				print epoch, "fitness is", population[0].fitness
 
-		# process the matings
-		children = pool.map(sex, [(population[matings[epoch * POPULATION_SIZE + i]], population[i]) for i in xrange(POPULATION_SIZE)])
+		# skew to increase mating success for high fitness individuals
+		skewed_fitnesses = np.array(fitnesses[:POPULATION_SIZE / 2]) ** 10
+		skewed_prob = skewed_fitnesses / sum(skewed_fitnesses)
+		matings = zip(*[np.random.choice(POPULATION_SIZE / 2, POPULATION_SIZE, p = skewed_prob) for i in xrange(2)])
+		# mates
+		children = pool.map(sex, [(population[p1], population[p2]) for (p1, p2) in matings])
 
 		# move on!
 		population = children
 
 	# close the child processes
-	pool.join()
 	pool.close()
+	pool.join()
 
 	if not DRY_RUN:
 		# don't leave an opened file pointer!
