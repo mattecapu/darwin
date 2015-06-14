@@ -1,8 +1,12 @@
 import numpy as np
+import os
+
 from individual import individual
 
 def filename(run, epoch):
-	return "data/weights/run" + str(run) + "_iter" + str(epoch) + ".dat"
+	if not os.path.exists("data/weights/" + str(run)):
+		os.makedirs("data/weights/" + str(run))
+	return "data/weights/" + str(run) + "/" + str(epoch) + ".dat"
 
 def dump(run, epoch, indiv):
 	np.savetxt(filename(run, epoch), np.concatenate((indiv.f_chrom[:, 0, :], indiv.m_chrom[:, 0, :])))

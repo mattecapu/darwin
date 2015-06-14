@@ -1,17 +1,17 @@
 function display_behaviour(run, epoch)
+	config = load("config.m");
+	dir_name = [int2str(run) "/" int2str(epoch)];
 	try
-		data = load(["data/behaviours/run" int2str(run) "_iter" int2str(epoch) ".dat"]);
+		data = load(["data/behaviours/" dir_name ".dat"]);
 	catch
 		system(["python log_behaviour.py " int2str(run) " " int2str(epoch)]);
-		data = load(["data/behaviours/run" int2str(run) "_iter" int2str(epoch) ".dat"]);
+		data = load(["data/behaviours/" dir_name ".dat"]);
 	end
 	try
 		fitness = load(["data/fitness/run" int2str(run) ".m"])(epoch + 1, 2);
 	catch
 		fitness = NaN;
 	end
-	config = load("config.m");
-	dir_name = [int2str(run) "/" int2str(epoch)];
 	mkdir("data/plots", int2str(run));
 	mkdir(["data/plots/" int2str(run)], int2str(epoch));
 	mkdir(["data/plots/" dir_name], "frames");
@@ -25,8 +25,7 @@ function display_behaviour(run, epoch)
 		max([data(:, 3); food(2)]) + padding
 	];
 
-	% multiply by 2pi to get angles
-	data(:, 4) *= 2 * pi;
+	% preprocess arrow points
 	arrow_point = 3.5 * [cos(data(:, 4)) sin(data(:, 4))];
 
 	% disable plotting on screen
