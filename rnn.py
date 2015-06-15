@@ -1,17 +1,24 @@
 import numpy as np
 
 class RNN:
-	def __init__(self, (hh, xh, hy)):
-		self.W_hh = hh
-		self.W_xh = xh
-		self.W_hy = hy
-		self.reset()
+	# transitions -> list of weight matrices of the synapses between layer n-1 and n
+	# recurrences -> weights tensor of the recurrence synapses
+	def __init__(self, recurrences, transitions):
+		self.recurrences = recurrences
+		self.transitions = transitions
+		(self.hidden_layers, self.layers_size) = self.recurrences.shape[:2]
+		self.hiddens = np.zeros((self.hidden_layers, self.layers_size, 1))
 
 	def reset(self):
-		self.h = np.zeros((self.W_hh.shape[0], 1))
+		# set to zero in-place
+		self.hiddens *= 0
 
-	def step(self, x):
-		# update the hidden state
-		self.h = np.tanh(np.dot(self.W_hh, self.h) + np.dot(self.W_xh, x))
-		# compute the output vector
-		return np.tanh(np.dot(self.W_hy, self.h));
+	def forward(self, x):
+		prev_output = x
+		for i in xrange(self.hidden_layers):
+			# update the hidden state
+			self.hiddens[i] = np.tanh(np.dot(self.recurrences[i], self.hiddens[i]) + np.dot(self.transitions[i], prev_output))
+			# computes the layer output
+			prev_output = np.tanh(np.dot(self.transitions[i + 1], self.hiddens[i]))
+
+		return prev_output

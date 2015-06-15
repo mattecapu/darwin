@@ -12,9 +12,10 @@ def load_config():
 		"dumps": int(config[5]),
 		"behaviour_logging_iterations": int(config[6]),
 		"eyes": int(config[7]),
-		"hidden_layer_size": int(config[8]),
-		"output_layer_size": int(config[9]),
-		"light_intensity": config[10],
-		"mutation_rate": config[11],
-		"crossing_over_rate": config[12]
+		"hidden_layers": int(config[8]),
+		"hidden_layers_size": int(config[9]),
+		"output_layer_size": int(config[10]),
+		"light_intensity": config[11],
+		"mutation_rate": config[12],
+		"crossing_over_rate": config[13]
 	}
