@@ -1,4 +1,7 @@
 *.pyc
+*.pyd
+*.c
+*.o
 bin
 profiles
 cpp/eigen
