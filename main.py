@@ -39,6 +39,9 @@ def sex((partner_1, partner_2)):
 if __name__ == "__main__":
 	# flag to disable logging for quick test runs
 	DRY_RUN = len(sys.argv) > 2 and sys.argv[2] == "dry"
+	# flag to disable parallelization for better testing
+	# (error reporting from parallel process is quite shitty)
+	PARALLEL = len(sys.argv) > 3 and not sys.argv[3] == "nopar"
 
 	if not DRY_RUN:
 		# id of this simulation
@@ -61,13 +64,17 @@ if __name__ == "__main__":
 		print ITERATIONS, " iterations (" + str(ITERATIONS * POPULATION_SIZE * FOOD_LOCATIONS * FITNESS_COMPUTING_ITERATIONS), "cycles)"
 		print "\n"
 
-	# parallel processes pool
-	pool = Pool(processes = 4)
+	if PARALLEL:
+		# parallel processes pool
+		pool = Pool(processes = 4)
+		parallelize = pool.map
+	else:
+		parallelize = map
 
 	for epoch in xrange(ITERATIONS):
 		# compute fitness of every individual
 		food_locs = food_locations[(epoch * FOOD_LOCATIONS):((epoch + 1)* FOOD_LOCATIONS)]
-		fitnesses = pool.map(calc_fitness, [(population[i], food_locs) for i in xrange(POPULATION_SIZE)])
+		fitnesses = parallelize(calc_fitness, [(population[i], food_locs) for i in xrange(POPULATION_SIZE)])
 		for i in xrange(POPULATION_SIZE):
 			population[i].fitness = fitnesses[i]
 
@@ -90,15 +97,18 @@ if __name__ == "__main__":
 		skewed_prob = skewed_fitnesses / sum(skewed_fitnesses)
 		matings = zip(*[np.random.choice(POPULATION_SIZE / 2, POPULATION_SIZE, p = skewed_prob) for i in xrange(2)])
 		# mates
-		children = pool.map(sex, [(population[p1], population[p2]) for (p1, p2) in matings])
+		children = parallelize(sex, [(population[p1], population[p2]) for (p1, p2) in matings])
 
 		# move on!
 		population = children
 
-	# close the child processes
-	pool.close()
-	pool.join()
+	if PARALLEL:
+		# close the child processes
+		pool.close()
+		pool.join()
 
 	if not DRY_RUN:
 		# don't leave an opened file pointer!
 		history.close()
+
+		print "\n", "simulation", RUN_PREFIX, "ended"
