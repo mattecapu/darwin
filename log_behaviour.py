@@ -13,7 +13,7 @@ RUN_PREFIX = sys.argv[1]
 EPOCH = sys.argv[2]
 ITERATIONS = config["behaviour_logging_iterations"] if len(sys.argv) < 4 else int(sys.argv[3])
 
-food = [config["food_distance"] / np.sqrt(2)] * 2
+food_x = config["food_distance"] / np.sqrt(2)
 # load genes
 subject = dedump(RUN_PREFIX, EPOCH)
 if not os.path.exists("data/behaviours/" + str(RUN_PREFIX)):
@@ -24,9 +24,9 @@ for epoch in xrange(ITERATIONS):
 	# data about the subject
 	data = [
 		epoch,
-		subject.position[0, 0],
-		subject.position[0, 1],
+		subject.position_x,
+		subject.position_y,
 		subject.rotation
 	]
 	log.write(" ".join(map(str, data)) + "\n")
-	subject.tick(subject.visibility(food))
+	subject.tick(food_x, food_x)

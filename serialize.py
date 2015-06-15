@@ -9,10 +9,9 @@ def filename(run, epoch):
 	return "data/weights/" + str(run) + "/" + str(epoch) + ".dat"
 
 def dump(run, epoch, indiv):
-	np.savetxt(filename(run, epoch), np.concatenate((indiv.f_chrom[:, 0, :], indiv.m_chrom[:, 0, :])))
+	np.savetxt(filename(run, epoch), np.concatenate((indiv.f_chrom[:, :], indiv.m_chrom[:, :])))
 
 def dedump(run, epoch):
-	chromosomes = np.loadtxt(filename(run, epoch))
+	chromosomes = np.loadtxt(filename(run, epoch)).astype(np.float32)
 	n = chromosomes.shape[0] / 2
-	chr_length = chromosomes.shape[1]
-	return individual(chromosomes[:n].reshape((n, 1, chr_length)), chromosomes[n:].reshape((n, 1, chr_length)))
+	return individual(chromosomes[:n], chromosomes[n:])

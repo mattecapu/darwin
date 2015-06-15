@@ -23,13 +23,13 @@ DUMPS = config["dumps"]
 
 def calc_fitness((indiv, food_locs)):
 	fitness = 0
-	for food in food_locs:
-		for i in xrange(FITNESS_COMPUTING_ITERATIONS): indiv.tick(indiv.visibility(food))
+	for (food_x, food_y) in food_locs:
+		for i in xrange(FITNESS_COMPUTING_ITERATIONS): indiv.tick(food_x, food_y)
 		# the fitness is computed as the fraction of the distance traveled towards the food
 		# but because fitness should be maximized and not minimized, we use the shifted reciprocal
 		# (1 / (1 + x)) of this quantity, where the shift avoid a vertical asymptote at 0,
 		# and the reciprocal invert the trend from descending to ascending
-		fitness += 1 / (1 + np.linalg.norm(indiv.position - food))
+		fitness += 1 / (1 + np.sqrt((indiv.position_x - food_x) ** 2 + (indiv.position_y - food_y) ** 2))
 		indiv.reset()
 	return fitness / FOOD_LOCATIONS
 
@@ -49,11 +49,11 @@ if __name__ == "__main__":
 
 	# place food sources at random points
 	# along a circumference with radius FOOD_DISTANCE
-	food_locations_x = np.random.rand(1, FOOD_LOCATIONS * ITERATIONS) * 2 - 1
-	food_locations = np.vstack([
-		food_locations_x,
-		np.random.choice([+1, -1], FOOD_LOCATIONS * ITERATIONS) * np.sqrt(1 - food_locations_x ** 2)
-	]).T * FOOD_DISTANCE
+	food_locations_x = np.random.rand(1, FOOD_LOCATIONS * ITERATIONS).astype(np.float32) * 2 - 1
+	food_locations = zip(
+		(food_locations_x * FOOD_DISTANCE)[0],
+		(np.random.choice([+1, -1], FOOD_LOCATIONS * ITERATIONS) * np.sqrt(1 - food_locations_x ** 2) * FOOD_DISTANCE).astype(np.float32)[0]
+	)
 
 	# let's populate our world!
 	population = [individual.create() for x in xrange(POPULATION_SIZE)]
