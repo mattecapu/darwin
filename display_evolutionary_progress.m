@@ -12,7 +12,7 @@ function display_evolutionary_progress(run)
 	end
 	figure("visible", "off")
 	clf()
-	newplot()	
+	newplot()
 	scatter(evolution(1:e_i, 1), evolution(1:e_i, 2))
 	ylim([0 1])
 	title("population evolution (shows only fitness better than all the previouses)")
