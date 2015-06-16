@@ -1,6 +1,7 @@
 *.pyc
 *.pyd
 *.c
+*.html
 *.o
 bin
 profiles
