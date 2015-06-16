@@ -1,7 +1,7 @@
 import numpy as np
 
 def load_config():
-	# the format should be compatible with Octave
+	# the format should be compatible with Octave, thus we set % as comment char
 	config = np.loadtxt("config.m", comments = "%", dtype = np.float32)
 	return {
 		"iterations": int(config[0]),
@@ -17,5 +17,6 @@ def load_config():
 		"output_layer_size": int(config[10]),
 		"light_intensity": config[11],
 		"mutation_rate": config[12],
-		"crossing_over_rate": config[13]
+		"crossing_over_rate": config[13],
+		"mating_fraction": config[14]
 	}

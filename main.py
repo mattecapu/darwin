@@ -11,6 +11,7 @@ config = load_config()
 # parameters
 ITERATIONS = (config["iterations"] if len(sys.argv) < 2 else int(sys.argv[1])) + 1
 POPULATION_SIZE = config["population_size"]
+MATING_FRACTION = config["mating_fraction"]
 # a lower value should improve the
 # signal-to-noise ratio in the vision system
 FOOD_DISTANCE = config["food_distance"]
@@ -41,7 +42,7 @@ if __name__ == "__main__":
 	DRY_RUN = len(sys.argv) > 2 and sys.argv[2] == "dry"
 	# flag to disable parallelization for better testing
 	# (error reporting from parallel process is quite shitty)
-	PARALLEL = len(sys.argv) > 3 and not sys.argv[3] == "nopar"
+	PARALLEL = not (len(sys.argv) > 3 and sys.argv[3] == "nopar")
 
 	if not DRY_RUN:
 		# id of this simulation
@@ -49,10 +50,11 @@ if __name__ == "__main__":
 
 	# place food sources at random points
 	# along a circumference with radius FOOD_DISTANCE
-	food_locations_x = np.random.rand(1, FOOD_LOCATIONS * ITERATIONS).astype(np.float32) * 2 - 1
+	food_samples = FOOD_LOCATIONS * ITERATIONS
+	food_locations_x = np.cos(np.pi/4 + ((np.random.rand(1, food_samples).astype(np.float32) * 2 - 1) * np.arange(1, food_samples + 1) / (food_samples)))
 	food_locations = zip(
 		(food_locations_x * FOOD_DISTANCE)[0],
-		(np.random.choice([+1, -1], FOOD_LOCATIONS * ITERATIONS) * np.sqrt(1 - food_locations_x ** 2) * FOOD_DISTANCE).astype(np.float32)[0]
+		(np.random.choice([+1, -1], food_samples) * np.sqrt(1 - food_locations_x ** 2) * FOOD_DISTANCE).astype(np.float32)[0]
 	)
 
 	# let's populate our world!
@@ -93,9 +95,9 @@ if __name__ == "__main__":
 				print epoch, "fitness is", population[0].fitness
 
 		# skew to increase mating success for high fitness individuals
-		skewed_fitnesses = np.array(fitnesses[:POPULATION_SIZE / 2]) ** 10
+		skewed_fitnesses = np.array(fitnesses[:POPULATION_SIZE * MATING_FRACTION]) ** 10
 		skewed_prob = skewed_fitnesses / sum(skewed_fitnesses)
-		matings = zip(*[np.random.choice(POPULATION_SIZE / 2, POPULATION_SIZE, p = skewed_prob) for i in xrange(2)])
+		matings = zip(*[np.random.choice(POPULATION_SIZE * MATING_FRACTION, POPULATION_SIZE, p = skewed_prob) for i in xrange(2)])
 		# mates
 		children = parallelize(sex, [(population[p1], population[p2]) for (p1, p2) in matings])
 

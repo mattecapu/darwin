@@ -26,3 +26,5 @@
 0.15
 % crossing over rate
 0.5
+% mating fraction
+0.125
