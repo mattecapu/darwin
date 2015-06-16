@@ -57,8 +57,8 @@ cdef class individual:
 	@staticmethod
 	def create():
 		# generates APLOID_NUMBER random chromosomes
-		cdef np.ndarray[np.float32_t, ndim = 2] gamete1 = np.random.randn(APLOID_NUMBER, CHROMOSOME_LENGTH).astype(np.float32)
-		cdef np.ndarray[np.float32_t, ndim = 2] gamete2 = np.random.randn(APLOID_NUMBER, CHROMOSOME_LENGTH).astype(np.float32)
+		cdef np.ndarray[np.float32_t, ndim = 2] gamete1 = np.random.rand(APLOID_NUMBER, CHROMOSOME_LENGTH).astype(np.float32)
+		cdef np.ndarray[np.float32_t, ndim = 2] gamete2 = np.random.rand(APLOID_NUMBER, CHROMOSOME_LENGTH).astype(np.float32)
 		return individual(gamete1, gamete2)
 
 	@cython.boundscheck(False)
@@ -165,7 +165,7 @@ cdef class individual:
 			if np.random.rand() < MUTATION_RATE:
 				# mutate a randomly drawn gene
 				mutation_loc = np.random.randint(CHROMOSOME_LENGTH)
-				gamete[i, mutation_loc] = np.random.randn() * gamete[i, mutation_loc]
+				gamete[i, mutation_loc] = np.random.rand()
 
 		return gamete
 
