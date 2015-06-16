@@ -1,6 +1,7 @@
-import numpy as np
 cimport cython
+
 cimport numpy as np
+import numpy as np
 
 cdef class RNN:
 	# transitions -> list of weight matrices of the synapses between layer n-1 and n
@@ -11,12 +12,10 @@ cdef class RNN:
 		(self.hidden_layers, self.layers_size) = self.recurrences.shape[:2]
 		self.hiddens = np.zeros((self.hidden_layers, self.layers_size, 1))
 
-	cdef int reset(self):
+	cdef reset(self):
 		# set to zero in-place
 		self.hiddens *= 0
-		return 0
 
-	@cython.boundscheck(False)
 	cdef np.ndarray[np.float32_t, ndim = 2] forward(self, np.ndarray[np.float32_t, ndim = 2] x):
 		cdef np.ndarray[np.float32_t, ndim = 2] prev_output = x
 		cdef int i
