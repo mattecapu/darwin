@@ -18,7 +18,6 @@ from serialize import dump
 # parameters
 DEF POPULATION_SIZE = 40
 DEF MATING_FRACTION = 0.125
-cdef int MATING_POPULATION = <int>(POPULATION_SIZE * MATING_FRACTION)
 DEF FOOD_DISTANCE = 24.0
 
 # fitness accuracy
@@ -29,6 +28,8 @@ DEF FITNESS_COMPUTING_ITERATIONS = 40
 DEF DUMPS = 10
 
 def simulation(ITERATIONS, RUN_PREFIX, DRY_RUN):
+	cdef int MATING_POPULATION = <int>(POPULATION_SIZE * MATING_FRACTION)
+	print MATING_POPULATION
 	# place food sources at random points
 	# along a circumference with radius FOOD_DISTANCE
 	cdef int food_samples = FOOD_LOCATIONS * ITERATIONS
@@ -80,11 +81,11 @@ def simulation(ITERATIONS, RUN_PREFIX, DRY_RUN):
 				fitness_buffer[epoch % 1000][0] = <float>epoch
 				fitness_buffer[epoch % 1000][1] = top_fitness
 				# dump weights of the best
-				if (epoch % (ITERATIONS / DUMPS)) == 0 or epoch == 0:
+				if <int>(epoch % (ITERATIONS / <float>DUMPS)) == 0 or epoch == 0:
 					dump(RUN_PREFIX, epoch, population[0])
 					# log to console
 					print epoch, "-> dump at fitness", top_fitness
-				elif epoch % (ITERATIONS / (DUMPS * 10)) == 0:
+				elif <int>(epoch % (ITERATIONS / <float>(DUMPS * 10))) == 0:
 					print epoch, "fitness is", top_fitness
 
 			# skew to increase mating success for high fitness individuals
