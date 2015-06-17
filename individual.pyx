@@ -9,7 +9,7 @@ from rnn import RNN
 cdef extern from "math.h":
 	float sin(float) nogil
 	float cos(float) nogil
-	float abs(float) nogil
+	float fabs(float) nogil
 	float atan2(float, float) nogil
 	float asin(float) nogil
 	float sqrt(float) nogil
@@ -41,7 +41,7 @@ cdef float DEG = 180 / np.pi
 
 # get the angle of incidence of light at angle phi
 cdef float get_theta(float x, float y, float phi) nogil:
-	return abs(atan2(x - sin(phi), y - cos(phi)) + phi)
+	return fabs(atan2(y - sin(phi), x - cos(phi)) + phi)
 
 cdef class individual:
 	def __init__(self, np.ndarray[np.float32_t, ndim = 2] _f_chrom, np.ndarray[np.float32_t, ndim = 2] _m_chrom):
@@ -117,7 +117,7 @@ cdef class individual:
 				else:
 					result[i] = 0
 
-		return np.asarray(<np.float32_t[:]>result).reshape(EYES_VECTOR_SHAPE)
+		return np.asarray(result, dtype = np.float32).reshape(EYES_VECTOR_SHAPE)
 
 	cdef np.ndarray[np.float32_t, ndim = 2] gamete(self):
 		cdef np.ndarray[np.float32_t, ndim = 2] gamete
@@ -154,8 +154,10 @@ cdef class individual:
 	cpdef individual mate(self, individual partner):
 		return individual(self.gamete(), partner.gamete())
 
+cdef inline np.ndarray[np.float32_t, ndim = 2] rand_chr():
+	# generates APLOID_NUMBER random chromosomes (with genes in the interval [-1, +1]
+	return np.random.rand(APLOID_NUMBER, CHROMOSOME_LENGTH).astype(np.float32) * 2 - 1
+
 cpdef individual create_indiv():
-	# generates APLOID_NUMBER random chromosomes
-	cdef np.ndarray[np.float32_t, ndim = 2] gamete1 = np.random.rand(APLOID_NUMBER, CHROMOSOME_LENGTH).astype(np.float32)
-	cdef np.ndarray[np.float32_t, ndim = 2] gamete2 = np.random.rand(APLOID_NUMBER, CHROMOSOME_LENGTH).astype(np.float32)
-	return individual(gamete1, gamete2)
+	# yield an individual with random genes
+	return individual(rand_chr(), rand_chr())
