@@ -11,7 +11,7 @@ config = load_config()
 # get parameters of the simulation
 RUN_PREFIX = sys.argv[1]
 EPOCH = sys.argv[2]
-ITERATIONS = config["behaviour_logging_iterations"] if len(sys.argv) < 4 else int(sys.argv[3])
+ITERATIONS = 200 if len(sys.argv) < 4 else int(sys.argv[3])
 
 food_x = config["food_distance"] / np.sqrt(2)
 # load genes

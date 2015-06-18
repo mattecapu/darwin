@@ -39,6 +39,7 @@ DEF LIGHT_INTENSITY = 1024
 
 cdef float DEG = 180 / np.pi
 
+
 # get the angle of incidence of light at angle phi
 cdef float get_theta(float x, float y, float phi) nogil:
 	return fabs(atan2(y - sin(phi), x - cos(phi)) + phi)

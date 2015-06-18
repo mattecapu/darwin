@@ -14,11 +14,14 @@ from cython.parallel import prange
 cimport individual
 import individual
 from serialize import dump
+from load_config import load_config
+
+config = load_config()
 
 # parameters
 DEF POPULATION_SIZE = 40
-DEF MATING_FRACTION = 0.125
-DEF FOOD_DISTANCE = 24.0
+DEF MATING_FRACTION = 0.25
+cdef float FOOD_DISTANCE = config["food_distance"]
 
 # fitness accuracy
 DEF FOOD_LOCATIONS = 8
@@ -29,7 +32,6 @@ DEF DUMPS = 10
 
 def simulation(ITERATIONS, RUN_PREFIX, DRY_RUN):
 	cdef int MATING_POPULATION = <int>(POPULATION_SIZE * MATING_FRACTION)
-	print MATING_POPULATION
 	# place food sources at random points
 	# along a circumference with radius FOOD_DISTANCE
 	cdef int food_samples = FOOD_LOCATIONS * ITERATIONS
@@ -81,11 +83,11 @@ def simulation(ITERATIONS, RUN_PREFIX, DRY_RUN):
 				fitness_buffer[epoch % 1000][0] = <float>epoch
 				fitness_buffer[epoch % 1000][1] = top_fitness
 				# dump weights of the best
-				if <int>(epoch % (ITERATIONS / <float>DUMPS)) == 0 or epoch == 0:
+				if <int>(epoch % ((ITERATIONS - 1) / <float>DUMPS)) == 0 or epoch == 0:
 					dump(RUN_PREFIX, epoch, population[0])
 					# log to console
 					print epoch, "-> dump at fitness", top_fitness
-				elif <int>(epoch % (ITERATIONS / <float>(DUMPS * 10))) == 0:
+				elif <int>(epoch % ((ITERATIONS - 1)/ <float>(DUMPS * 10))) == 0:
 					print epoch, "fitness is", top_fitness
 
 			# skew to increase mating success for high fitness individuals
