@@ -3,10 +3,8 @@ import numpy as np
 import sys
 import time
 
-from load_config import load_config
 from simulation import simulation
 
-config = load_config()
 ITERATIONS = (200 if len(sys.argv) < 2 else int(sys.argv[1])) + 1
 # flag to disable logging for quick test runs
 DRY_RUN = len(sys.argv) > 2 and sys.argv[2] == "dry"

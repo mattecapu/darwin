@@ -17,7 +17,7 @@ function display_behaviour(run, epoch)
 	mkdir(["data/plots/" dir_name], "frames");
 
 	padding = 10;
-	food = [config(3) config(3)] * sqrt(2);
+	food = [config(1) config(1)] * sqrt(2);
 	bounds = [
 		min([data(:, 2); food(1)]) - padding
 		max([data(:, 2); food(1)]) + padding

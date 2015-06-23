@@ -39,7 +39,7 @@ def simulation(ITERATIONS, RUN_PREFIX, DRY_RUN):
 	cdef float[:] food_locations_x
 	cdef float[:] food_locations_y
 	# the locations get farther from the central point as the iterations go
-	food_locations_angle = np.pi / 4 * (1 + 2 * (np.random.rand(food_samples) * 2 - 1) * np.arange(1, food_samples + 1) / (food_samples))
+	food_locations_angle = np.pi / 4 * (1 + 2 * (np.random.rand(food_samples) * 2 - 1))
 	food_locations_x = (np.cos(food_locations_angle) * FOOD_DISTANCE).astype(np.float32)
 	food_locations_y = (np.sin(food_locations_angle) * FOOD_DISTANCE).astype(np.float32)
 
@@ -96,7 +96,6 @@ def simulation(ITERATIONS, RUN_PREFIX, DRY_RUN):
 			partners1 = np.random.choice(MATING_POPULATION, POPULATION_SIZE, p = skewed_prob)
 			partners2 = np.random.choice(MATING_POPULATION, POPULATION_SIZE, p = skewed_prob)
 			# mates
-			#for i in prange(POPULATION_SIZE, schedule = "static"):
 			for i in range(POPULATION_SIZE):
 				children[i] = population[partners1[i]].mate(population[partners2[i]])
 
