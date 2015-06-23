@@ -148,7 +148,7 @@ cdef class individual:
 			if np.random.rand() < MUTATION_RATE:
 				# mutate a randomly drawn gene
 				mutation_loc = np.random.randint(CHROMOSOME_LENGTH)
-				gamete[i, mutation_loc] = np.random.rand()
+				gamete[i, mutation_loc] = np.random.rand() * 2 - 1
 
 		return gamete
 
