@@ -7,3 +7,5 @@
 bin
 profiles
 cpp/eigen
+cpp/*.exe
+cpp/*.obj
