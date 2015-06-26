@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "eigen\Eigen\Dense"
+#include <Eigen/Dense>
 #include <cmath>
 
 using namespace Eigen;
