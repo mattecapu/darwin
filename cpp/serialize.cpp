@@ -13,9 +13,9 @@ void log_weights(int run, int epoch, Individual* indiv) {
 	std::stringstream filename;
 	filename << "D:/www/darwin/data/weights/run" << run << "_iter" <<epoch << ".dat";
 	std::ofstream dump_file(filename.str());
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < CHROMOSOME_LENGTH; ++j) {
-			dump_file << indiv->expressed_genes[i][j] << ' ';
+	for (int i = 0, g = 0; i < APLOID_NUMBER; ++i) {
+		for (int j = 0; j < CHROMOSOME_LENGTH; ++j, ++g) {
+			dump_file << indiv->expressed_genes[g] << ' ';
 		}
 		dump_file << std::endl;
 	}

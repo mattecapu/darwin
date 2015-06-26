@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	for (int iter = 0; iter < ITERATIONS; ++iter) {
-		for (int i = 0; i < POPULATION_SIZE; ++i) {
+		_Cilk_for (int i = 0; i < POPULATION_SIZE; ++i) {
 			for (int f = 0; f < FOOD_LOCATIONS; ++f) {
 				for (int j = 0; j < FITNESS_COMPUTING_ITERATIONS; ++j) {
 					generation[i]->tick(food_locations[f]);
@@ -83,23 +83,23 @@ int main(int argc, char* argv[]) {
 				)));
 				generation[i]->reset();
 			}
+			// mean of all the tests
 			generation[i]->fitness /= FOOD_LOCATIONS;
 		}
 
-		// in place population sorting
+		// sort population by fitness
 		std::sort(generation, generation + POPULATION_SIZE, fitness_compare);
 
 		if (!DRY_RUN) {
 			// log the best fitness
-			log_fitness(RUN_PREFIX, iter, generation[0]->fitness);
+			_Cilk_spawn log_fitness(RUN_PREFIX, iter, generation[0]->fitness);
 			// dump weights of the best
-			if (fmod(iter, ITERATIONS / (1.0 * DUMPS)) == 0 || iter == 0) {
-				log_weights(RUN_PREFIX, iter, generation[0]);
+			if (fmod(iter, ITERATIONS / (1.0 * DUMPS)) < 1 || iter == 0) {
+				_Cilk_spawn log_weights(RUN_PREFIX, iter, generation[0]);
 				std::cout << iter << " -> dump at fitness " << generation[0]->fitness << std::endl;
-
+			}
 		} else if (fmod(iter, ITERATIONS / (10.0 * DUMPS)) < 1) {
 			std::cout << iter << " fitness is " << generation[0]->fitness << std::endl;
-		}
 		}
 
 		sum = 0;
@@ -108,16 +108,18 @@ int main(int argc, char* argv[]) {
 			mating_chance[i] = pow(generation[i]->fitness, 10);
 			sum += mating_chance[i];
 		}
-		for (int i = 0; i < MATING_POPULATION; ++i) {
+		_Cilk_for (int i = 0; i < MATING_POPULATION; ++i) {
 			// get the percentage of contribution to total fitness
 			mating_chance[i] /= sum;
 		}
+
 		for (int i = 1; i < MATING_POPULATION; ++i) {
 			// cumulate the percentages
 			mating_chance[i] += mating_chance[i - 1];
 		}
-		partner1 = partner2 = 0;
-		for (int i = 0; i < POPULATION_SIZE; ++i) {
+
+		_Cilk_for (int i = 0; i < POPULATION_SIZE; ++i) {
+			partner1 = partner2 = 0;
 			// find the partners from the cumulated probability
 			draw = fuzzy_rand();
 			while(mating_chance[partner1] <= draw && partner1 < MATING_POPULATION) ++partner1;
@@ -127,9 +129,10 @@ int main(int argc, char* argv[]) {
 			next_generation[i] = generation[partner1]->mate(generation[partner2], fuzzy_rand);
 		}
 
-		/*for (int i = 0; i < POPULATION_SIZE; ++i) {
+		// free the memory allocated by the old generation
+		_Cilk_for (int i = 0; i < POPULATION_SIZE; ++i) {
 			delete generation[i];
-		}*/
+		}
 
 		// switch array
 		generation = next_generation;

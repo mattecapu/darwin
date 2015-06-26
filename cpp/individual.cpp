@@ -1,13 +1,15 @@
 #include <iostream>
-
-#include "eigen\Eigen\Dense"
 #include <cmath>
 
-using namespace Eigen;
-
-#define M_2_PI 6.2832
-#define M_PI_2 1.5708
-#define M_PI_4 0.78540
+#ifndef M_2_PI
+	#define M_2_PI 6.2832
+#endif
+#ifndef M_PI_2
+	#define M_PI_2 1.5708
+#endif
+#ifndef M_PI_4
+	#define M_PI_4 0.78540
+#endif
 
 // morphology
 #define EYES 5
@@ -15,23 +17,21 @@ using namespace Eigen;
 
 // neural network layers size
 #define INPUTS EYES
-#define HIDDEN_SIZE 10
+#define HIDDEN_SIZE 7
 #define HIDDEN_LAYERS 3
 #define OUTPUTS 3
 
 // number of chromosome pairs
-#define N (INPUTS + HIDDEN_SIZE * (HIDDEN_LAYERS - 1) + OUTPUTS)
+#define APLOID_NUMBER (INPUTS + HIDDEN_SIZE * (HIDDEN_LAYERS - 1) + OUTPUTS)
 #define CHROMOSOME_LENGTH HIDDEN_SIZE
 // probability of mutation events
-#define CROSSING_OVER_RATE 0.18
-#define MUTATION_RATE 0.15
+#define CROSSING_OVER_RATE 0.1
+#define MUTATION_RATE 0.2
 
 #include "rnn.cpp"
 
 // constants
 #define LIGHT_INTENSITY 1024
-
-#define DEG 180 / M_PI
 
 struct gene {
 	double value;
@@ -49,9 +49,10 @@ class Individual {
 		NeuralNetwork* brain;
 		gene* mother_genes;
 		gene* father_genes;
-		double expressed_genes[N][CHROMOSOME_LENGTH];
+		double* expressed_genes;
 
 		static Individual* create(std::function<double()> fuzzy_rand) {
+			// generate EYE_ANGLES if not done before
 			if (!cache_eye_angles) {
 				for (int i = 0; i < EYES; ++i) {
 					EYE_ANGLES[i] = (2 * i + 1) * (M_PI_2 / EYES);
@@ -59,34 +60,36 @@ class Individual {
 				cache_eye_angles = true;
 			}
 
-			gene *gametes = new gene[2 * N * CHROMOSOME_LENGTH];
+			// creates two random gametes
+			gene* gametes[2];
+			gametes[0] = new gene[APLOID_NUMBER * CHROMOSOME_LENGTH];
+			gametes[1] = new gene[APLOID_NUMBER * CHROMOSOME_LENGTH];
 
 			for (int g = 0; g < 2; ++g) {
-				for (int i = 0; i < N; ++i) {
-					for (int j = 0; j < CHROMOSOME_LENGTH; ++j) {
-						gametes[(g * N + i) * CHROMOSOME_LENGTH + j].value = fuzzy_rand();
-						gametes[(g * N + i) * CHROMOSOME_LENGTH + j].dominant = fuzzy_rand() < 0.5;
+				for (int i = 0, t = 0; i < APLOID_NUMBER; ++i) {
+					for (int j = 0; j < CHROMOSOME_LENGTH; ++j, ++t) {
+						gametes[g][t].value = fuzzy_rand();
+						gametes[g][t].dominant = fuzzy_rand() < 0.5;
 					}
 				}
 			}
-			return new Individual(gametes, gametes + N * CHROMOSOME_LENGTH);
+			return new Individual(gametes[0], gametes[1]);
 		}
 
-		Individual(gene *gamete1, gene *gamete2) {
+		Individual(gene* gamete1, gene* gamete2) {
 			this->mother_genes = gamete1;
 			this->father_genes = gamete2;
+			this->expressed_genes = new double[APLOID_NUMBER * CHROMOSOME_LENGTH];
 			// simulates dominance/recessivity
-			int g = 0;
-			for (int i = 0; i < N; ++i) {
-				for (int j = 0; j < CHROMOSOME_LENGTH; ++j) {
-					this->expressed_genes[i][j] = 0;
-					this->expressed_genes[i][j] += this->mother_genes[g].dominant ? this->mother_genes[g].value : this->father_genes[g].value;
-					this->expressed_genes[i][j] += this->father_genes[g].dominant ? this->father_genes[g].value : this->mother_genes[g].value;
-					this->expressed_genes[i][j] /= 2;
-					++g;
+			for (int i = 0, g = 0; i < APLOID_NUMBER; ++i) {
+				for (int j = 0; j < CHROMOSOME_LENGTH; ++j, ++g) {
+					this->expressed_genes[g] = 0;
+					this->expressed_genes[g] += this->mother_genes[g].dominant ? this->mother_genes[g].value : this->father_genes[g].value;
+					this->expressed_genes[g] += this->father_genes[g].dominant ? this->father_genes[g].value : this->mother_genes[g].value;
+					this->expressed_genes[g] /= 2;
 				}
 			}
-			this->brain = new NeuralNetwork(&(this->expressed_genes[0][0]));
+			this->brain = new NeuralNetwork(this->expressed_genes);
 			this->reset();
 		}
 
@@ -107,8 +110,7 @@ class Individual {
 			double cos_rot = cos(this->rotation);
 			this->position[0] += delta_x *  cos_rot + delta_y * sin_rot;
 			this->position[1] += delta_x * -sin_rot + delta_y * cos_rot;
-			this->rotation = this->rotation + delta_rot * M_2_PI;
-			while (this->rotation > M_2_PI) this->rotation -= M_2_PI;
+			this->rotation = fmod(this->rotation + delta_rot * M_2_PI, M_2_PI);
 		}
 
 		input_t visibility(double *food) {
@@ -126,26 +128,29 @@ class Individual {
 			theta_min += angle - M_PI_2;
 			theta_max += angle;
 
+			// compute visibility of food for every eye
 			input_t visibility_vector = input_t::Zero();
 			double phi;
 			for (int i = 0; i < EYES; ++i) {
 				phi = EYE_ANGLES[i] - this->rotation;
 				if (theta_min < phi && phi < theta_max) {
-					visibility_vector[i] = sin(fabs(atan2(food[1] - sin(phi), food[0] - cos(phi)) + phi));
+					visibility_vector[i] = intensity * sin(fabs(atan2(food[1] - sin(phi), food[0] - cos(phi)) + phi));
 				}
 			}
-			return visibility_vector * intensity;
+			return visibility_vector;
 		}
 
 		gene* gamete(std::function<double()> fuzzy_rand) {
-			gene *gamete = new gene[N * CHROMOSOME_LENGTH];
 			// alias for parents genes
 			gene* m = this->mother_genes;
 			gene* f = this->father_genes;
+			// new genes
+			gene *gamete = new gene[APLOID_NUMBER * CHROMOSOME_LENGTH];
+
 			bool m_or_f;
 			int split_loc, mutation_loc;
 
-			for (int i = 0; i < N * CHROMOSOME_LENGTH; i += CHROMOSOME_LENGTH) {
+			for (int i = 0; i < APLOID_NUMBER * CHROMOSOME_LENGTH; i += CHROMOSOME_LENGTH) {
 				// toss a coin to choose wheter use a chromosome
 				// from the father genes or the mother's as the "main" one
 				m_or_f = fuzzy_rand() < 0.5;
@@ -154,6 +159,7 @@ class Individual {
 				if (fuzzy_rand() < CROSSING_OVER_RATE) {
 					// draw the locus where to split
 					split_loc = floor(CHROMOSOME_LENGTH * (fuzzy_rand() + 1) / 2);
+					// copy genes from one parent until split_loc, then copy from the other
 					std::memcpy(gamete + i, (m_or_f ? m : f) + i, split_loc * sizeof(gene));
 					std::memcpy(gamete + i + split_loc, (m_or_f ? f : m) + i + split_loc, (CHROMOSOME_LENGTH - split_loc) * sizeof(gene));
 				} else {
@@ -176,8 +182,10 @@ class Individual {
 		}
 
 		~Individual() {
-			delete this->mother_genes;
+			// free allocated memory
 			delete this->father_genes;
+			delete this->mother_genes;
+			delete this->expressed_genes;
 			delete this->brain;
 		}
 };
