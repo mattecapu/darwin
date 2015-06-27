@@ -26,6 +26,7 @@ void flush_fitness(int run) {
 	std::stringstream filename;
 	filename << "D:/www/darwin/data/fitness/run" << run << ".m";
 	std::ofstream history(filename.str(), std::ios::app);
+	#pragma noparallel
 	for (int i = 0; i < buffer_index; ++i) {
 		history << fitness_buffer[i][0] << " " << fitness_buffer[i][1] << std::endl;
 	}

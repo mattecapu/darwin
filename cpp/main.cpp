@@ -21,21 +21,27 @@
 
 #define DUMPS 10
 
-bool fitness_compare(Individual* a, Individual* b) {
+bool fitness_compare(const Individual* a, const Individual* b) {
 	return a->fitness > b->fitness;
 }
 
-unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+const unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 std::default_random_engine rand_gen(seed);
-int RUN_PREFIX = std::uniform_int_distribution<int>(1, 1 << 12)(rand_gen);
 std::uniform_real_distribution<double> rand_reals(-1, 1);
-std::uniform_int_distribution<int> choose(0, 1);
-double fuzzy_rand() { return rand_reals(rand_gen); }
+
+double fuzzy_rand() {
+	return rand_reals(rand_gen);
+}
+
 
 int main(int argc, char* argv[]) {
 
-	int ITERATIONS = 1 + (argc < 2 ? 200 : std::atoi(argv[1]));
-	bool DRY_RUN = argc > 2 && std::string("dry").compare(argv[2]) == 0;
+	// parse command line arguments
+	const long ITERATIONS = 1 + (argc < 2 ? 200 : std::atol(argv[1]));
+	const bool DRY_RUN = argc > 2 && std::string("dry").compare(argv[2]) == 0;
+
+	// draws a random identifier for this run
+	const int RUN_PREFIX = std::uniform_int_distribution<int>(1, 1 << 12)(rand_gen);
 
 	std::cout << "## simulation " << RUN_PREFIX << std::endl;
 	std::cout << "## " << ITERATIONS << " iterations" << std::endl;
@@ -47,12 +53,14 @@ int main(int argc, char* argv[]) {
 	// generates FOOD_LOCATIONS random points for each iteration
 	// where collocate the food the creatures should reach
 	double food_angle;
-	double food_locations[FOOD_LOCATIONS * ITERATIONS][2];
+	double *food_locations = new double[2 * FOOD_LOCATIONS * ITERATIONS];
+
+	const std::uniform_int_distribution<int> choose(0, 1);
 
 	for (int i = 0; i < FOOD_LOCATIONS * ITERATIONS; ++i) {
 		food_angle = M_PI_4 * (1 + 2 * fuzzy_rand());
-		food_locations[i][0] = cos(food_angle) * FOOD_DISTANCE;
-		food_locations[i][1] = sin(food_angle) * FOOD_DISTANCE;
+		food_locations[2 * i] = cos(food_angle) * FOOD_DISTANCE;
+		food_locations[2 * i + 1] = sin(food_angle) * FOOD_DISTANCE;
 	}
 
 	// allocate memory for the population pool
@@ -71,15 +79,16 @@ int main(int argc, char* argv[]) {
 	}
 
 	for (int iter = 0; iter < ITERATIONS; ++iter) {
+		#pragma parallel always
 		_Cilk_for (int i = 0; i < POPULATION_SIZE; ++i) {
 			for (int f = 0; f < FOOD_LOCATIONS; ++f) {
 				for (int j = 0; j < FITNESS_COMPUTING_ITERATIONS; ++j) {
-					generation[i]->tick(food_locations[f]);
+					generation[i]->tick(food_locations + (iter * FOOD_LOCATIONS + 2 * f));
 				}
 				// fitness is what fraction of the distance to food it traveled
 				generation[i]->fitness += 1 / (1 + (sqrt(
-					pow(generation[i]->position[0] - food_locations[f][0], 2) +\
-					pow(generation[i]->position[1] - food_locations[f][1], 2)\
+					pow(generation[i]->position[0] - food_locations[iter * FOOD_LOCATIONS + 2 * f], 2) +
+					pow(generation[i]->position[1] - food_locations[iter * FOOD_LOCATIONS + 2 * f + 1], 2)
 				)));
 				generation[i]->reset();
 			}
@@ -102,41 +111,47 @@ int main(int argc, char* argv[]) {
 			std::cout << iter << " fitness is " << generation[0]->fitness << std::endl;
 		}
 
-		sum = 0;
-		for (int i = 0; i < MATING_POPULATION; ++i) {
-			// skew the distribution
-			mating_chance[i] = pow(generation[i]->fitness, 10);
-			sum += mating_chance[i];
-		}
-		_Cilk_for (int i = 0; i < MATING_POPULATION; ++i) {
-			// get the percentage of contribution to total fitness
-			mating_chance[i] /= sum;
+		if (iter != ITERATIONS - 1) {
+			for (int i = 0; i < MATING_POPULATION; ++i) {
+				// skew the distribution
+				mating_chance[i] = pow(generation[i]->fitness, 10);
+			}
+			sum = 0;
+			for (int i = 0; i < MATING_POPULATION; ++i) {
+				sum += mating_chance[i];
+			}
+			for (int i = 0; i < MATING_POPULATION; ++i) {
+				// get the percentage of contribution to total fitness
+				mating_chance[i] /= sum;
+			}
+			for (int i = 1; i < MATING_POPULATION; ++i) {
+				// cumulate the percentages
+				mating_chance[i] += mating_chance[i - 1];
+			}
+
+			for (int i = 0; i < POPULATION_SIZE; ++i) {
+				partner1 = partner2 = 0;
+				// find the partners from the cumulated probability
+				draw = fuzzy_rand() * 2 - 1;
+				while(mating_chance[partner1] <= draw && partner1 < MATING_POPULATION) ++partner1;
+				draw = fuzzy_rand() * 2 - 1;
+				while(mating_chance[partner2] <= draw && partner2 < MATING_POPULATION) ++partner2;
+				// dirty things...
+				next_generation[i] = generation[partner1]->mate(generation[partner2], fuzzy_rand);
+			}
 		}
 
-		for (int i = 1; i < MATING_POPULATION; ++i) {
-			// cumulate the percentages
-			mating_chance[i] += mating_chance[i - 1];
-		}
-
-		_Cilk_for (int i = 0; i < POPULATION_SIZE; ++i) {
-			partner1 = partner2 = 0;
-			// find the partners from the cumulated probability
-			draw = fuzzy_rand();
-			while(mating_chance[partner1] <= draw && partner1 < MATING_POPULATION) ++partner1;
-			draw = fuzzy_rand();
-			while(mating_chance[partner2] <= draw && partner2 < MATING_POPULATION) ++partner2;
-			// dirty things...
-			next_generation[i] = generation[partner1]->mate(generation[partner2], fuzzy_rand);
-		}
+		// wait for spawned logging operations
+		if (!DRY_RUN) _Cilk_sync;
 
 		// free the memory allocated by the old generation
-		_Cilk_for (int i = 0; i < POPULATION_SIZE; ++i) {
+		for (int i = 0; i < POPULATION_SIZE; ++i) {
 			delete generation[i];
 		}
 
 		// switch array
 		generation = next_generation;
-		next_generation = population[generation == population[0] ? 1 : 0];
+		next_generation = population[iter % 2 == 0 ? 0 : 1];
 	}
 
 	flush_fitness(RUN_PREFIX);

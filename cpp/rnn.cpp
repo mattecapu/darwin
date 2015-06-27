@@ -30,4 +30,10 @@ class NeuralNetwork {
 			}
 			return (this->transition[HIDDEN_LAYERS]->transpose() * output).unaryExpr(activation_func);
 		}
+
+		~NeuralNetwork() {
+			for (int i = 0; i <= HIDDEN_LAYERS; ++i) {
+				delete this->transition[i];
+			}
+		}
 };

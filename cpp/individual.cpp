@@ -65,12 +65,10 @@ class Individual {
 			gametes[0] = new gene[APLOID_NUMBER * CHROMOSOME_LENGTH];
 			gametes[1] = new gene[APLOID_NUMBER * CHROMOSOME_LENGTH];
 
-			for (int g = 0; g < 2; ++g) {
-				for (int i = 0, t = 0; i < APLOID_NUMBER; ++i) {
-					for (int j = 0; j < CHROMOSOME_LENGTH; ++j, ++t) {
-						gametes[g][t].value = fuzzy_rand();
-						gametes[g][t].dominant = fuzzy_rand() < 0.5;
-					}
+			for (int i = 0; i < 2; ++i) {
+				for (int g = 0; g < APLOID_NUMBER * CHROMOSOME_LENGTH; ++g) {
+					gametes[i][g].value = fuzzy_rand();
+					gametes[i][g].dominant = fuzzy_rand() < 0.5;
 				}
 			}
 			return new Individual(gametes[0], gametes[1]);
@@ -81,13 +79,12 @@ class Individual {
 			this->father_genes = gamete2;
 			this->expressed_genes = new double[APLOID_NUMBER * CHROMOSOME_LENGTH];
 			// simulates dominance/recessivity
-			for (int i = 0, g = 0; i < APLOID_NUMBER; ++i) {
-				for (int j = 0; j < CHROMOSOME_LENGTH; ++j, ++g) {
-					this->expressed_genes[g] = 0;
-					this->expressed_genes[g] += this->mother_genes[g].dominant ? this->mother_genes[g].value : this->father_genes[g].value;
-					this->expressed_genes[g] += this->father_genes[g].dominant ? this->father_genes[g].value : this->mother_genes[g].value;
-					this->expressed_genes[g] /= 2;
-				}
+			#pragma ivdep
+			for (int g = 0; g < APLOID_NUMBER * CHROMOSOME_LENGTH; ++g) {
+				this->expressed_genes[g] = 0;
+				this->expressed_genes[g] += this->mother_genes[g].dominant ? this->mother_genes[g].value : this->father_genes[g].value;
+				this->expressed_genes[g] += this->father_genes[g].dominant ? this->father_genes[g].value : this->mother_genes[g].value;
+				this->expressed_genes[g] /= 2;
 			}
 			this->brain = new NeuralNetwork(this->expressed_genes);
 			this->reset();
@@ -129,23 +126,25 @@ class Individual {
 			theta_max += angle;
 
 			// compute visibility of food for every eye
-			input_t visibility_vector = input_t::Zero();
 			double phi;
 			for (int i = 0; i < EYES; ++i) {
 				phi = EYE_ANGLES[i] - this->rotation;
-				if (theta_min < phi && phi < theta_max) {
-					visibility_vector[i] = intensity * sin(fabs(atan2(food[1] - sin(phi), food[0] - cos(phi)) + phi));
-				}
 			}
-			return visibility_vector;
+			input_t visibility;
+			double *raw = &(visibility(0));
+			#pragma ivdep
+			for (int i = 0; i < EYES; ++i) {
+				raw[i] = (theta_min < phi) * (phi < theta_max) * intensity * sin(fabs(atan2(food[1] - sin(phi), food[0] - cos(phi)) + phi));
+			}
+			return visibility;
 		}
 
 		gene* gamete(std::function<double()> fuzzy_rand) {
+			// new genes
+			gene *gamete = new gene[APLOID_NUMBER * CHROMOSOME_LENGTH];
 			// alias for parents genes
 			gene* m = this->mother_genes;
 			gene* f = this->father_genes;
-			// new genes
-			gene *gamete = new gene[APLOID_NUMBER * CHROMOSOME_LENGTH];
 
 			bool m_or_f;
 			int split_loc, mutation_loc;
@@ -159,7 +158,6 @@ class Individual {
 				if (fuzzy_rand() < CROSSING_OVER_RATE) {
 					// draw the locus where to split
 					split_loc = floor(CHROMOSOME_LENGTH * (fuzzy_rand() + 1) / 2);
-					// copy genes from one parent until split_loc, then copy from the other
 					std::memcpy(gamete + i, (m_or_f ? m : f) + i, split_loc * sizeof(gene));
 					std::memcpy(gamete + i + split_loc, (m_or_f ? f : m) + i + split_loc, (CHROMOSOME_LENGTH - split_loc) * sizeof(gene));
 				} else {
@@ -183,9 +181,9 @@ class Individual {
 
 		~Individual() {
 			// free allocated memory
-			delete this->father_genes;
-			delete this->mother_genes;
-			delete this->expressed_genes;
+			delete [] this->father_genes;
+			delete [] this->mother_genes;
+			delete [] this->expressed_genes;
 			delete this->brain;
 		}
 };
