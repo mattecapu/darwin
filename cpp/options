@@ -1,0 +1,32 @@
+# include Eigen
+-I"D:\www\darwin\cpp\eigen"
+
+# generic optimizations
+/O3
+
+# assure safe aliasing policy
+/Qansi-alias
+/Qrestrict
+
+# enable auto-parallelization
+/Qunroll
+/Qparallel
+
+# less precise but faster floating point operations
+/Qpc64
+/Qprec-div
+/fp:fast
+
+# interprocedural optimization
+/Qipo
+
+# use specific instruction sets for my CPU
+/QxHost
+#/QxSSE4.1
+#/QxSSE4.2
+#/arch:core-avx2
+
+# reporting for perf auditing
+#/Qopt-report:3
+#/Qopt-report-phase:vec
+#/Qopt-report-phase:par
