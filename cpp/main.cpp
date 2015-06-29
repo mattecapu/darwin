@@ -6,38 +6,30 @@
 #include <chrono>
 #include <string>
 
-#include "individual.cpp"
-#include "serialize.cpp"
-
 // parameters
-#define POPULATION_SIZE 40
-#define MATING_POPULATION 10
+#define POPULATION_SIZE 5 //100
+// should be integer divisor of POPULATION_SIZE
+#define MATING_POPULATION 1 //10
 // a lower value should improve the
 // signal-to-noise ratio in the vision system
 #define FOOD_DISTANCE 24
 // fitness accuracy
-#define FOOD_LOCATIONS 8
-#define FITNESS_COMPUTING_ITERATIONS 40
+#define FOOD_LOCATIONS 2 //8
+#define FITNESS_COMPUTING_ITERATIONS 4 //40
 
 #define DUMPS 10
 
-bool fitness_compare(const Individual* a, const Individual* b) {
-	return a->fitness > b->fitness;
+#include "random.cpp"
+#include "individual.cpp"
+#include "serialize.cpp"
+
+inline double diff_norm(double* b, double* a) {
+	return sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2));
 }
-
-const unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-std::default_random_engine rand_gen(seed);
-std::uniform_real_distribution<double> rand_reals(-1, 1);
-
-double fuzzy_rand() {
-	return rand_reals(rand_gen);
-}
-
 
 int main(int argc, char* argv[]) {
-
 	// parse command line arguments
-	const long ITERATIONS = 1 + (argc < 2 ? 200 : std::atol(argv[1]));
+	const long ITERATIONS = argc < 2 ? 200 : std::atol(argv[1]);
 	const bool DRY_RUN = argc > 2 && std::string("dry").compare(argv[2]) == 0;
 
 	// draws a random identifier for this run
@@ -53,11 +45,10 @@ int main(int argc, char* argv[]) {
 	// generates FOOD_LOCATIONS random points for each iteration
 	// where collocate the food the creatures should reach
 	double food_angle;
-	double *food_locations = new double[2 * FOOD_LOCATIONS * ITERATIONS];
+	double *food_locations = new double[2 * FOOD_LOCATIONS];
 
-	const std::uniform_int_distribution<int> choose(0, 1);
-
-	for (int i = 0; i < FOOD_LOCATIONS * ITERATIONS; ++i) {
+	for (int i = 0; i < FOOD_LOCATIONS; ++i) {
+		// spread uniformly angles around pi / 4
 		food_angle = M_PI_4 * (1 + 2 * fuzzy_rand());
 		food_locations[2 * i] = cos(food_angle) * FOOD_DISTANCE;
 		food_locations[2 * i + 1] = sin(food_angle) * FOOD_DISTANCE;
@@ -75,21 +66,18 @@ int main(int argc, char* argv[]) {
 	int partner1, partner2;
 
 	for (int i = 0; i < POPULATION_SIZE; ++i) {
-		generation[i] = Individual::create(fuzzy_rand);
+		generation[i] = Individual::create();
 	}
 
 	for (int iter = 0; iter < ITERATIONS; ++iter) {
 		#pragma parallel always
-		_Cilk_for (int i = 0; i < POPULATION_SIZE; ++i) {
+		/*_Cilk_*/for (int i = 0; i < POPULATION_SIZE; ++i) {
 			for (int f = 0; f < FOOD_LOCATIONS; ++f) {
 				for (int j = 0; j < FITNESS_COMPUTING_ITERATIONS; ++j) {
-					generation[i]->tick(food_locations + (iter * FOOD_LOCATIONS + 2 * f));
+					generation[i]->tick(food_locations + 2 * f);
 				}
 				// fitness is what fraction of the distance to food it traveled
-				generation[i]->fitness += 1 / (1 + (sqrt(
-					pow(generation[i]->position[0] - food_locations[iter * FOOD_LOCATIONS + 2 * f], 2) +
-					pow(generation[i]->position[1] - food_locations[iter * FOOD_LOCATIONS + 2 * f + 1], 2)
-				)));
+				generation[i]->fitness += 1 / (1 + diff_norm(generation[i]->position, food_locations + 2 * f));
 				generation[i]->reset();
 			}
 			// mean of all the tests
@@ -97,17 +85,17 @@ int main(int argc, char* argv[]) {
 		}
 
 		// sort population by fitness
-		std::sort(generation, generation + POPULATION_SIZE, fitness_compare);
+		std::sort(generation, generation + POPULATION_SIZE, [](Individual* a, Individual* b) {return a->fitness > b->fitness;});
 
 		if (!DRY_RUN) {
 			// log the best fitness
-			_Cilk_spawn log_fitness(RUN_PREFIX, iter, generation[0]->fitness);
+			/*_Cilk_spawn*/ log_fitness(RUN_PREFIX, iter, generation[0]->fitness);
 			// dump weights of the best
 			if (fmod(iter, ITERATIONS / (1.0 * DUMPS)) < 1 || iter == 0) {
-				_Cilk_spawn log_weights(RUN_PREFIX, iter, generation[0]);
+				/*_Cilk_spawn*/ log_weights(RUN_PREFIX, iter, generation[0]);
 				std::cout << iter << " -> dump at fitness " << generation[0]->fitness << std::endl;
 			}
-		} else if (fmod(iter, ITERATIONS / (10.0 * DUMPS)) < 1) {
+		} else if (fmod(iter, ITERATIONS / (5.0 * DUMPS)) < 1) {
 			std::cout << iter << " fitness is " << generation[0]->fitness << std::endl;
 		}
 
@@ -129,20 +117,21 @@ int main(int argc, char* argv[]) {
 				mating_chance[i] += mating_chance[i - 1];
 			}
 
+			// find the partners from the cumulated probability
+			// draw is a number in the interval [0, 1]
 			for (int i = 0; i < POPULATION_SIZE; ++i) {
 				partner1 = partner2 = 0;
-				// find the partners from the cumulated probability
-				draw = fuzzy_rand() * 2 - 1;
+				draw = (fuzzy_rand() + 1) / 2;
 				while(mating_chance[partner1] <= draw && partner1 < MATING_POPULATION) ++partner1;
-				draw = fuzzy_rand() * 2 - 1;
+				draw = (fuzzy_rand() + 1) / 2;
 				while(mating_chance[partner2] <= draw && partner2 < MATING_POPULATION) ++partner2;
 				// dirty things...
-				next_generation[i] = generation[partner1]->mate(generation[partner2], fuzzy_rand);
+				next_generation[i] = generation[partner1]->mate(generation[partner2]);
 			}
 		}
 
 		// wait for spawned logging operations
-		if (!DRY_RUN) _Cilk_sync;
+		//if (!DRY_RUN) _Cilk_sync;
 
 		// free the memory allocated by the old generation
 		for (int i = 0; i < POPULATION_SIZE; ++i) {
