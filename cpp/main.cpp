@@ -7,15 +7,15 @@
 #include <string>
 
 // parameters
-#define POPULATION_SIZE 5 //100
+#define POPULATION_SIZE 100
 // should be integer divisor of POPULATION_SIZE
-#define MATING_POPULATION 1 //10
+#define MATING_POPULATION 10
 // a lower value should improve the
 // signal-to-noise ratio in the vision system
 #define FOOD_DISTANCE 24
 // fitness accuracy
-#define FOOD_LOCATIONS 2 //8
-#define FITNESS_COMPUTING_ITERATIONS 4 //40
+#define FOOD_LOCATIONS 8
+#define FITNESS_COMPUTING_ITERATIONS 40
 
 #define DUMPS 10
 
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 
 	for (int iter = 0; iter < ITERATIONS; ++iter) {
 		#pragma parallel always
-		/*_Cilk_*/for (int i = 0; i < POPULATION_SIZE; ++i) {
+		_Cilk_for (int i = 0; i < POPULATION_SIZE; ++i) {
 			for (int f = 0; f < FOOD_LOCATIONS; ++f) {
 				for (int j = 0; j < FITNESS_COMPUTING_ITERATIONS; ++j) {
 					generation[i]->tick(food_locations + 2 * f);
@@ -89,13 +89,13 @@ int main(int argc, char* argv[]) {
 
 		if (!DRY_RUN) {
 			// log the best fitness
-			/*_Cilk_spawn*/ log_fitness(RUN_PREFIX, iter, generation[0]->fitness);
+			_Cilk_spawn log_fitness(RUN_PREFIX, iter, generation[0]->fitness);
 			// dump weights of the best
 			if (fmod(iter, ITERATIONS / (1.0 * DUMPS)) < 1 || iter == 0) {
-				/*_Cilk_spawn*/ log_weights(RUN_PREFIX, iter, generation[0]);
+				_Cilk_spawn log_weights(RUN_PREFIX, iter, generation[0]);
 				std::cout << iter << " -> dump at fitness " << generation[0]->fitness << std::endl;
 			}
-		} else if (fmod(iter, ITERATIONS / (5.0 * DUMPS)) < 1) {
+		} else if (fmod(iter, ITERATIONS / (5.0 * DUMPS)) < 1 || iter == ITERATIONS - 1) {
 			std::cout << iter << " fitness is " << generation[0]->fitness << std::endl;
 		}
 
@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		// wait for spawned logging operations
-		//if (!DRY_RUN) _Cilk_sync;
+		if (!DRY_RUN) _Cilk_sync;
 
 		// free the memory allocated by the old generation
 		for (int i = 0; i < POPULATION_SIZE; ++i) {

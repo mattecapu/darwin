@@ -34,6 +34,7 @@
 // constants
 #define LIGHT_INTENSITY 1024.0
 
+
 struct gene {
 	double value;
 	bool dominant;
@@ -159,8 +160,8 @@ class Individual {
 			bool m_or_f;
 			int split_loc, mutation_loc;
 			// alias for parents genes
-			gene* m = this->mother_genes;
-			gene* f = this->father_genes;
+			gene* m = this->mother_genes + offset;
+			gene* f = this->father_genes + offset;
 
 			// shift to offset
 			gamete += offset;
@@ -173,10 +174,10 @@ class Individual {
 			if (fuzzy_rand() < (CROSSING_OVER_RATE * 2 - 1)) {
 				// draw the locus where to split
 				split_loc = floor(chr_length * (fuzzy_rand() + 1) / 2);
-				std::memcpy(gamete, (m_or_f ? m : f) + offset, split_loc * sizeof(gene));
-				std::memcpy(gamete + split_loc, (m_or_f ? f : m) + offset + split_loc, (chr_length - split_loc) * sizeof(gene));
+				std::memcpy(gamete, m_or_f ? m : f, split_loc * sizeof(gene));
+				std::memcpy(gamete + split_loc, (m_or_f ? f : m) + split_loc, (chr_length - split_loc) * sizeof(gene));
 			} else {
-				std::memcpy(gamete, (m_or_f ? m : f) + offset, chr_length * sizeof(gene));
+				std::memcpy(gamete, m_or_f ? m : f, chr_length * sizeof(gene));
 			}
 
 			// sometimes, mutate a gene
@@ -194,7 +195,7 @@ class Individual {
 			int offset = 0;
 
 			for (int c = 0; c < 3; ++c) {
-				for (int i = 0; i < CHROMOSOME_NUMBER[c]; i += CHROMOSOME_LENGTHS[c]) {
+				for (int i = 0; i < CHROMOSOME_NUMBER[c]; ++i) {
 					this->chr_mitosis(gamete, offset, CHROMOSOME_LENGTHS[c]);
 					offset += CHROMOSOME_LENGTHS[c];
 				}

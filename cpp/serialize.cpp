@@ -13,7 +13,7 @@ bool dir_created = false;
 
 void log_weights(int run, int epoch, Individual* indiv) {
 	std::stringstream filename;
-	filename << ROOT << "/www/darwin/data/weights/" << run;
+	filename << ROOT << "\\www\\darwin\\data\\weights\\" << run;
 	if (!dir_created) {
 		if (system(("mkdir " + filename.str()).c_str())) {
 			std::cout << "warning! weights dir not created" << std::endl;
