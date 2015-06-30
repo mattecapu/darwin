@@ -1,23 +1,25 @@
 function display_behaviour(run, epoch)
-	config = load("config.m");
+	% root = "/media/mattecapu/Data/www/darwin/";
+	root = "D:/";
+
 	dir_name = [int2str(run) "/" int2str(epoch)];
 	try
-		data = load(["data/behaviours/" dir_name ".dat"]);
+		data = load([root "data/behaviours/" dir_name ".dat"]);
 	catch
-		system(["python log_behaviour.py " int2str(run) " " int2str(epoch)]);
-		data = load(["data/behaviours/" dir_name ".dat"]);
+		system(["/home/mattecapu/Desktop/log_b " int2str(run) " " int2str(epoch) " 200"]);
+		data = load([root "data/behaviours/" dir_name ".dat"]);
 	end
 	try
-		fitness = load(["data/fitness/run" int2str(run) ".m"])(epoch + 1, 2);
+		fitness = load([root "data/fitness/run" int2str(run) ".m"])(epoch + 1, 2);
 	catch
 		fitness = NaN;
 	end
-	mkdir("data/plots", int2str(run));
-	mkdir(["data/plots/" int2str(run)], int2str(epoch));
-	mkdir(["data/plots/" dir_name], "frames");
+	mkdir([root "data/plots"], int2str(run));
+	mkdir([root "data/plots/" int2str(run)], int2str(epoch));
+	mkdir([root "data/plots/" dir_name], "frames");
 
 	padding = 10;
-	food = [config(1) config(1)] * sqrt(2);
+	food = [24 24] / sqrt(2);
 	bounds = [
 		min([data(:, 2); food(1)]) - padding
 		max([data(:, 2); food(1)]) + padding
@@ -27,6 +29,9 @@ function display_behaviour(run, epoch)
 
 	% preprocess arrow points
 	arrow_point = 3.5 * [cos(data(:, 4)) sin(data(:, 4))];
+
+	% force plotting with GNU Plot
+	graphics_toolkit("gnuplot");
 
 	% disable plotting on screen
 	figure("visible", "off")
@@ -38,7 +43,7 @@ function display_behaviour(run, epoch)
 	newplot()
 	axis(bounds, "image", "manual")
 	hold on
-	title(["fitness " num2str(fitness)]);
+	title_plot = title(["fitness " num2str(fitness) " - 1"]);
 	xlabel("x")
 	ylabel("y")
 	food_plot = plot(food(1), food(2), "dg");
@@ -50,14 +55,15 @@ function display_behaviour(run, epoch)
 
 	% print each frame... sloooowly!
 	for i = 1:length(data)
+		set(title_plot, "string",["fitness " num2str(fitness) " - " int2str(i)]);
 		set(creature_plot, "xdata", data(i, 2))
 		set(creature_plot, "ydata", data(i, 3))
 		set(arrow_plot, "xdata", data(i, 2))
 		set(arrow_plot, "ydata", data(i, 3))
 		set(arrow_plot, "udata", arrow_point(i, 1))
 		set(arrow_plot, "vdata", arrow_point(i, 2))
-		print(["data/plots/" dir_name "/frames/" int2str(i) ".png"], "-Ggs.cmd")
+		print([root "data/plots/" dir_name "/frames/" int2str(i) ".png"], "-dpng")
 	end
 	% creates the movie
-	system(["ffmpeg -f image2 -framerate 25 -start_number 1 -framerate 8 -i \"data/plots/" dir_name "/frames/%d.png\" -c:v libx264 -y data/plots/" dir_name "/movie.mp4"]);
+	system(["ffmpeg -f image2 -framerate 25 -start_number 1 -framerate 8 -i \"" root "data/plots/" dir_name "/frames/%d.png\" -c:v libx264 -y " root "data/plots/" dir_name "/movie.mp4"]);
 end
