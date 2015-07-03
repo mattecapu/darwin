@@ -9,3 +9,5 @@ profiles
 cpp/eigen
 cpp/*.exe
 cpp/*.obj
+python
+data
