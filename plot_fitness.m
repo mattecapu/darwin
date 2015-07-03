@@ -1,6 +1,6 @@
 function display_fitness(run)
 	% root = "/media/mattecapu/Data/www/darwin/";
-	root = "D:/";
+	root = "D:/www/darwin/";
 
 	data = load([root "data/fitness/run" int2str(run) ".m"]);
 	figure("visible", "off")
@@ -13,5 +13,5 @@ function display_fitness(run)
 	xlabel("iteration")
 	mkdir("data/plots", int2str(run));
 	set(gcf(), "paperposition", [0 0 11 6])
-	print([root "data/plots/" int2str(run) "/fitness.png"], "-r100")
+	print([root "data/plots/" int2str(run) "/fitness.png"], "-r100", "-Ggs.cmd")
 end

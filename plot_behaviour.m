@@ -1,12 +1,12 @@
 function display_behaviour(run, epoch)
 	% root = "/media/mattecapu/Data/www/darwin/";
-	root = "D:/";
+	root = "D:/www/darwin/";
 
 	dir_name = [int2str(run) "/" int2str(epoch)];
 	try
 		data = load([root "data/behaviours/" dir_name ".dat"]);
 	catch
-		system(["/home/mattecapu/Desktop/log_b " int2str(run) " " int2str(epoch) " 200"]);
+		system([root "cpp/log_behaviour.exe " int2str(run) " " int2str(epoch) " 200"]);
 		data = load([root "data/behaviours/" dir_name ".dat"]);
 	end
 	try
@@ -19,7 +19,7 @@ function display_behaviour(run, epoch)
 	mkdir([root "data/plots/" dir_name], "frames");
 
 	padding = 10;
-	food = [24 24] / sqrt(2);
+	food = [24 24] * sqrt(2);
 	bounds = [
 		min([data(:, 2); food(1)]) - padding
 		max([data(:, 2); food(1)]) + padding
@@ -62,7 +62,7 @@ function display_behaviour(run, epoch)
 		set(arrow_plot, "ydata", data(i, 3))
 		set(arrow_plot, "udata", arrow_point(i, 1))
 		set(arrow_plot, "vdata", arrow_point(i, 2))
-		print([root "data/plots/" dir_name "/frames/" int2str(i) ".png"], "-dpng")
+		print([root "data/plots/" dir_name "/frames/" int2str(i) ".png"], "-dpng", "-Ggs.cmd")
 	end
 	% creates the movie
 	system(["ffmpeg -f image2 -framerate 25 -start_number 1 -framerate 8 -i \"" root "data/plots/" dir_name "/frames/%d.png\" -c:v libx264 -y " root "data/plots/" dir_name "/movie.mp4"]);
