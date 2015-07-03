@@ -29,15 +29,19 @@ inline double diff_norm(double* b, double* a) {
 
 int main(int argc, char* argv[]) {
 	// parse command line arguments
-	const long ITERATIONS = argc < 2 ? 200 : std::atol(argv[1]);
-	const bool DRY_RUN = argc > 2 && std::string("dry").compare(argv[2]) == 0;
+	const long ITERATIONS = argc > 1 ? std::atol(argv[1]) : 200;
+	const bool LOG_FIT = !(argc > 2 && std::string("nofit").compare(argv[2]) == 0);
+	const bool LOG_WEG = !(argc > 3 && std::string("noweg").compare(argv[3]) == 0);
+	const bool LOG_GEN = argc > 4 && std::string("gen").compare(argv[4]) == 0;
 
 	// draws a random identifier for this run
 	const int RUN_PREFIX = std::uniform_int_distribution<int>(1, 1 << 12)(rand_gen);
 
 	std::cout << "## simulation " << RUN_PREFIX << std::endl;
 	std::cout << "## " << ITERATIONS << " iterations" << std::endl;
-	std::cout << "## " << (DRY_RUN ? "won't" : "will") << " log data" << std::endl;
+	std::cout << "## " << (!LOG_FIT ? "won't" : "will") << " log fitness" << std::endl;
+	std::cout << "## " << (!LOG_WEG ? "won't" : "will") << " log weights" << std::endl;
+	std::cout << "## " << (!LOG_GEN ? "won't" : "will") << " log genotypes" << std::endl;
 	std::cout << std::endl;
 
 	auto start_time = std::chrono::system_clock::now();
@@ -87,15 +91,22 @@ int main(int argc, char* argv[]) {
 		// sort population by fitness
 		std::sort(generation, generation + POPULATION_SIZE, [](Individual* a, Individual* b) {return a->fitness > b->fitness;});
 
-		if (!DRY_RUN) {
+		if (LOG_FIT) {
 			// log the best fitness
 			_Cilk_spawn log_fitness(RUN_PREFIX, iter, generation[0]->fitness);
+		}
+		if (LOG_GEN) {
+			// log genotypes
+			_Cilk_spawn log_genotypes(RUN_PREFIX, iter, generation);
+		}
+		if (LOG_WEG) {
 			// dump weights of the best
 			if (fmod(iter, ITERATIONS / (1.0 * DUMPS)) < 1 || iter == 0) {
 				_Cilk_spawn log_weights(RUN_PREFIX, iter, generation[0]);
 				std::cout << iter << " -> dump at fitness " << generation[0]->fitness << std::endl;
 			}
-		} else if (fmod(iter, ITERATIONS / (5.0 * DUMPS)) < 1 || iter == ITERATIONS - 1) {
+		}
+		if (fmod(iter, ITERATIONS / (5.0 * DUMPS)) < 1 || iter == ITERATIONS - 1) {
 			std::cout << iter << " fitness is " << generation[0]->fitness << std::endl;
 		}
 
@@ -130,8 +141,8 @@ int main(int argc, char* argv[]) {
 			}
 		}
 
-		// wait for spawned logging operations
-		if (!DRY_RUN) _Cilk_sync;
+		// wait before free memory if were spawned logging operations
+		if (LOG_FIT || LOG_WEG || LOG_GEN) _Cilk_sync;
 
 		// free the memory allocated by the old generation
 		for (int i = 0; i < POPULATION_SIZE; ++i) {

@@ -27,17 +27,19 @@
 #define MUTATION_RATE 0.2
 
 // weights interval
-#define INTERVAL 1.0
+#define INTERVAL 3.0
 
 #include "rnn.cpp"
 
 // constants
 #define LIGHT_INTENSITY 1024.0
 
+unsigned long global_gene_id = 0;
 
 struct gene {
 	double value;
 	bool dominant;
+	unsigned long id;
 };
 
 bool cache_eye_angles = false;
@@ -76,6 +78,7 @@ class Individual {
 				for (int g = 0; g < GENOME_SIZE; ++g) {
 					gametes[i][g].value = fuzzy_rand();
 					gametes[i][g].dominant = fuzzy_rand() < 0.0;
+					gametes[i][g].id = global_gene_id++;
 				}
 			}
 			return new Individual(gametes[0], gametes[1]);
@@ -186,6 +189,7 @@ class Individual {
 				mutation_loc = floor(chr_length * (fuzzy_rand() + 1) / 2);
 				gamete[mutation_loc].value = fuzzy_rand();
 				gamete[mutation_loc].dominant = fuzzy_rand() < 0.0;
+				gamete[mutation_loc].id = global_gene_id++;
 			}
 		}
 

@@ -4,6 +4,8 @@
 #include "random.cpp"
 #include "individual.cpp"
 
+#define ROOT "D:" // "/media/mattecapu/Data"
+
 int main(int argc, char* argv[]) {
 	if (argc < 4) {
 		std::cout << "please provide run, epoch and iterations" << std::endl;
@@ -11,14 +13,15 @@ int main(int argc, char* argv[]) {
 	}
 	std::string run(argv[1]);
 	std::string epoch(argv[2]);
+	std::string root(ROOT);
 	long ITERATIONS = std::atol(argv[3]);
 	double* weights = new double[GENOME_SIZE];
 
-	if (system(("mkdir /media/mattecapu/Data/www/darwin/data/behaviours/" + run).c_str())) {
-		std::cout << "can't create dir" << std::endl;
+	if (system(("mkdir " + root + "\\www\\darwin\\data\\behaviours\\" + run).c_str())) {
+		// prevent compiler warning, ah-ah!
 	}
-	std::ifstream weights_file("/media/mattecapu/Data/www/darwin/data/weights/" + run + "/" + epoch + ".dat");
-	std::ofstream log_file("/media/mattecapu/Data/www/darwin/data/behaviours/" + run + "/" + epoch + ".dat");
+	std::ifstream weights_file(root + "/www/darwin/data/weights/" + run + "/" + epoch + ".dat");
+	std::ofstream log_file(root + "/www/darwin/data/behaviours/" + run + "/" + epoch + ".dat");
 
 	for (int i = 0; i < GENOME_SIZE; ++i) {
 		weights_file >> weights[i];

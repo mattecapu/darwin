@@ -9,22 +9,39 @@
 
 double fitness_buffer[FITNESS_BUFFER_SIZE][2];
 int buffer_index = 0;
-bool dir_created = false;
+bool weights_dir_created = false;
 
 void log_weights(int run, int epoch, Individual* indiv) {
 	std::stringstream filename;
 	filename << ROOT << "\\www\\darwin\\data\\weights\\" << run;
-	if (!dir_created) {
+	if (!weights_dir_created) {
 		if (system(("mkdir " + filename.str()).c_str())) {
 			std::cout << "warning! weights dir not created" << std::endl;
 		}
-		dir_created = true;
+		weights_dir_created = true;
 	}
 	filename << "/" <<epoch << ".dat";
 	std::ofstream dump_file(filename.str());
 	for (int i = 0; i < GENOME_SIZE; ++i) {
 		dump_file << indiv->expressed_genes[i] << ' ';
 	}
+	dump_file.close();
+}
+
+void log_genotypes(int run, int epoch, Individual** population) {
+	std::stringstream filename;
+	filename << ROOT << "\\www\\darwin\\data\\genotypes\\run" << run << ".m";
+	std::ofstream dump_file(filename.str(), std::ios::app);
+
+	for (int i = 0; i < POPULATION_SIZE; ++i) {
+		for (int j = 0; j < GENOME_SIZE; ++j) {
+			dump_file << population[i]->mother_genes[j].id << ' ';
+		}
+		for (int j = 0; j < GENOME_SIZE; ++j) {
+			dump_file << population[i]->father_genes[j].id << ' ';
+		}
+	}
+	dump_file << std::endl;
 	dump_file.close();
 }
 
